@@ -44,8 +44,8 @@ export async function ingestDocument(
     VALUES (
       ${filename},
       ${fields.document_type},
-      ${JSON.stringify(fields.parties)}::jsonb,
-      ${JSON.stringify(fields.key_dates)}::jsonb,
+      ${sql.json(fields.parties)},
+      ${sql.json(fields.key_dates)},
       ${ocr.text},
       ${ocr.overall_confidence}
     )

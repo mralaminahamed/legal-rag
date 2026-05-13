@@ -101,13 +101,17 @@ async function buildPreferencesBlock(section: string): Promise<string> {
   const prefs = rows[0]?.preferences;
   if (!prefs) return "";
 
+  // Use ?? [] guards: LLM may omit array fields; Zod defaults only apply at
+  // parse time, not when reading raw JSONB back from the DB via porsager.
+  const avoid = prefs.avoid_phrases ?? [];
+  const prefer = prefs.prefer_phrases ?? [];
+  const rules = prefs.formatting_rules ?? [];
+
   const lines: string[] = ["HOUSE STYLE (follow these preferences):"];
   if (prefs.tone) lines.push(`  Tone: ${prefs.tone}`);
-  if (prefs.avoid_phrases.length > 0) lines.push(`  Avoid: ${prefs.avoid_phrases.join("; ")}`);
-  if (prefs.prefer_phrases.length > 0) lines.push(`  Prefer: ${prefs.prefer_phrases.join("; ")}`);
-  if (prefs.formatting_rules.length > 0) {
-    for (const rule of prefs.formatting_rules) lines.push(`  Rule: ${rule}`);
-  }
+  if (avoid.length > 0) lines.push(`  Avoid: ${avoid.join("; ")}`);
+  if (prefer.length > 0) lines.push(`  Prefer: ${prefer.join("; ")}`);
+  for (const rule of rules) lines.push(`  Rule: ${rule}`);
 
   return lines.join("\n");
 }
