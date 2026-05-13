@@ -10,6 +10,8 @@
   "scripts": {
     "dev:api": "npm --workspace apps/api run dev",
     "build:api": "npm --workspace apps/api run build",
+    "dev:web": "npm --workspace apps/web run dev",
+    "build:web": "npm --workspace apps/web run build",
     "demo": "tsx scripts/e2e-walkthrough.ts",
     "test:api": "npm --workspace apps/api run test",
     "test:ocr": "docker compose run --rm ocr pytest tests/ -v",

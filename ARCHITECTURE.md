@@ -111,6 +111,12 @@ React 19 + Vite + TypeScript strict SPA. Tailwind CSS v4 (`@tailwindcss/vite` pl
 ## Data Flow Diagram
 
 ```
+            ┌────────────────────────────────────────────────────┐
+            │ React SPA (apps/web — port 5173)                   │
+            │  Upload → Draft → Edit → Compare                   │
+            └────────────────────────┬───────────────────────────┘
+                                     │ REST (CORS)
+                                     ▼
 ┌──────────────┐    ┌─────────────────┐    ┌──────────────────────┐
 │ PDF / Image  │ ─► │ Python OCR      │ ─► │ Node.js Ingestion    │
 │ (any quality)│    │ Sidecar         │    │ Pipeline             │
@@ -157,6 +163,13 @@ React 19 + Vite + TypeScript strict SPA. Tailwind CSS v4 (`@tailwindcss/vite` pl
             │    formatting, omission, addition)                 │
             │  • embed and store as exemplar (if high-signal)    │
             │  • update style_preferences via summarization      │
+            └────────────────────────┬───────────────────────────┘
+                                     │ signal stored; next draft
+                                     │ picks up exemplars + prefs
+                                     ▼
+            ┌────────────────────────────────────────────────────┐
+            │ React SPA — ComparisonView                         │
+            │  word-diff, grounding delta, edit distance         │
             └────────────────────────────────────────────────────┘
 ```
 
@@ -174,7 +187,7 @@ React 19 + Vite + TypeScript strict SPA. Tailwind CSS v4 (`@tailwindcss/vite` pl
 | Ollama temperature | 0.3 | Same 0.2 as cloud providers. At 0.2, `qwen2.5:14b` on CPU occasionally produces repetitive completions. 0.3 produces more varied, useful output without sacrificing precision on short structured prompts. |
 | 3k char evidence cap | Per-section retrieval evidence capped at 3,000 chars | No cap. Smaller open models (qwen2.5:14b at Q5_K_M quantisation) degrade noticeably on prompts beyond ~4k tokens. Cloud providers (Claude, GPT-4o-mini) handle the full top-8 chunks without quality loss; the cap is a concession to Ollama compatibility. |
 | Async ingestion | Synchronous HTTP ingestion | Message queue (BullMQ). For the demo workflow, synchronous ingestion is simpler to operate. Production would use a queue for PDFs > 5 MB. |
-| Docker Compose only | Three-service docker-compose.yml | Kubernetes / cloud deployment. Single-command local setup was the highest-priority operational goal for reviewer reproducibility. |
+| Docker Compose only | Four-service docker-compose.yml (`api`, `ocr`, `db`, `web`) | Kubernetes / cloud deployment. Single-command local setup was the highest-priority operational goal for reviewer reproducibility. |
 
 ---
 
