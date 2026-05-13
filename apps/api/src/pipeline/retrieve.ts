@@ -129,7 +129,7 @@ export function reciprocalRankFusion(
     .sort((a, b) => b.score - a.score)
     .map(({ score, item }) => ({ ...item, score }));
 
-  const maxScore = merged[0]?.score ?? 1;
+  const maxScore = merged[0]?.score || 1;
   return merged.map((r) => ({ ...r, score: r.score / maxScore }));
 }
 

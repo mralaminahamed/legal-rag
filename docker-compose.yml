@@ -63,6 +63,7 @@ services:
       OLLAMA_CHAT_MODEL: ${OLLAMA_CHAT_MODEL:-qwen2.5:14b-instruct-q5_K_M}
       PORT_API: ${PORT_API:-3000}
       LOG_LEVEL: ${LOG_LEVEL:-info}
+      NODE_ENV: production
     ports:
       - "${PORT_API:-3000}:3000"
     # host-gateway allows the container to reach Ollama on the host (Linux).

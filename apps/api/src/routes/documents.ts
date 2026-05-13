@@ -21,7 +21,7 @@ documentsRouter.get("/", async (c) => {
       SELECT id, filename, document_type, created_at
       FROM documents
       ORDER BY created_at DESC
-      LIMIT 100
+      LIMIT 500
     `;
     return c.json(rows);
   } catch (err) {

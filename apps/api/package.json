@@ -14,16 +14,16 @@
     "test:integration": "vitest run src/__integration__"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "latest",
-    "@hono/node-server": "latest",
+    "@anthropic-ai/sdk": "^0.95.2",
+    "@hono/node-server": "^2.0.2",
     "diff": "^7.0.0",
     "dotenv": "^16.4.5",
-    "hono": "latest",
-    "openai": "latest",
+    "hono": "^4.12.18",
+    "openai": "^6.37.0",
     "pino": "^9.2.0",
     "pino-pretty": "^11.2.1",
     "postgres": "^3.4.4",
-    "zod": "latest"
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/diff": "^5.2.1",
