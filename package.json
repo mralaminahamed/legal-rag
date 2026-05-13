@@ -21,7 +21,11 @@
     "eval:full": "CONFIRM_RESET=1 tsx eval/run-full.ts",
     "eval:simulate": "tsx eval/simulate-operator.ts",
     "db:migrate": "tsx scripts/db-migrate.ts",
-    "db:reset": "CONFIRM_RESET=1 tsx scripts/db-reset.ts"
+    "db:reset": "CONFIRM_RESET=1 tsx scripts/db-reset.ts",
+    "generate:samples": "tsx scripts/generate-samples.ts",
+    "generate:degraded": "docker compose run --rm -v $(pwd)/scripts:/app/scripts -v $(pwd)/samples:/app/samples ocr python /app/scripts/generate-degraded-samples.py",
+    "generate:scanned": "docker compose run --rm -v $(pwd)/scripts:/app/scripts -v $(pwd)/samples:/app/samples ocr python /app/scripts/generate-scanned-samples.py",
+    "generate:all": "npm run generate:samples && npm run generate:degraded && npm run generate:scanned"
   },
   "engines": {
     "node": ">=20.0.0"
