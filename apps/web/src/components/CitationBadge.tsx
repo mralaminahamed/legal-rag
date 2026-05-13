@@ -14,7 +14,6 @@ export function CitationBadge({ chunkId, draftId }: CitationBadgeProps) {
     queryKey: ["citations", draftId],
     queryFn: () => api.getDraftCitations(draftId),
     staleTime: Infinity,
-    enabled: false, // fetched on hover via refetch
   });
 
   const citation = data?.citations.find((c) => c.chunk_id === chunkId);

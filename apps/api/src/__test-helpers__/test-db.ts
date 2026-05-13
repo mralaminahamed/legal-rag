@@ -37,7 +37,7 @@ let _client: ReturnType<typeof postgres> | null = null;
  * @throws {Error} When TEST_DATABASE_URL is not set or connection fails
  * @author Al Amin Ahamed
  */
-export async function createTestDb(): ReturnType<typeof postgres> {
+export async function createTestDb(): Promise<ReturnType<typeof postgres>> {
   if (_client) return _client;
 
   const url = process.env["TEST_DATABASE_URL"];

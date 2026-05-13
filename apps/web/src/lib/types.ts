@@ -25,7 +25,7 @@ export const DocumentDetailSchema = z.object({
   document_type: z.string().nullable(),
   parties: PartiesSchema.nullable(),
   key_dates: z.array(KeyDateSchema).nullable(),
-  ocr_confidence: z.number(),
+  ocr_confidence: z.coerce.number(),
   created_at: z.string(),
 });
 export type DocumentDetail = z.infer<typeof DocumentDetailSchema>;
@@ -41,7 +41,7 @@ export const SectionDraftSchema = z.object({
   draftId: z.string(),
   content: z.string(),
   citations: z.array(CitationSchema),
-  groundingScore: z.number(),
+  groundingScore: z.coerce.number(),
 });
 export type SectionDraft = z.infer<typeof SectionDraftSchema>;
 
