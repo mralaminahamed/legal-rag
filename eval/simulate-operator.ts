@@ -14,59 +14,13 @@
 import "dotenv/config";
 import postgres from "postgres";
 import { diffWords } from "diff";
+import { applyEdit } from "./edit-patterns.js";
 
 const API_URL = process.env["API_URL"] ?? "http://localhost:3000";
 const DATABASE_URL = process.env["DATABASE_URL"] ?? "postgres://legal:secret@localhost:5432/legalrag";
 const ROUND = process.argv.includes("--round") ? parseInt(process.argv[process.argv.indexOf("--round") + 1] ?? "1", 10) : 1;
 
 const db = postgres(DATABASE_URL, { max: 3 });
-
-// ── Edit pattern transforms ──────────────────────────────────────────────────
-
-const MONTHS: Record<string, string> = {
-  January: "01", February: "02", March: "03", April: "04",
-  May: "05", June: "06", July: "07", August: "08",
-  September: "09", October: "10", November: "11", December: "12",
-};
-
-function applyEdit(section: string, text: string): string {
-  switch (section) {
-    case "parties":
-      // Formatting: "P. Specter" → "Mr. P. Specter, Esq."
-      return text.replace(/\bP\.\s*Specter\b/g, "Mr. P. Specter, Esq.");
-
-    case "key_dates":
-      // Formatting: "January 15, 2024" → "2024-01-15"
-      return text.replace(
-        /\b(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{1,2}),?\s+(\d{4})\b/g,
-        (_m, month: string, day: string, year: string) =>
-          `${year}-${MONTHS[month] ?? "01"}-${day.padStart(2, "0")}`,
-      );
-
-    case "issues":
-      // Addition: prepend "Count N:" to numbered list items
-      return text.replace(/^(\d+)\.\s+/gm, (_, n: string) => `Count ${n}: `);
-
-    case "procedural_history":
-      // Rephrase: enforce past tense on common present-tense legal verbs
-      return text
-        .replace(/\bdenies\b/g, "denied")
-        .replace(/\bfiles\b/g, "filed")
-        .replace(/\brequests\b/g, "requested")
-        .replace(/\bmoves\b/g, "moved")
-        .replace(/\bgrants\b/g, "granted")
-        .replace(/\borders\b/g, "ordered");
-
-    case "relief":
-      // Rephrase: standardise request phrasing
-      return text
-        .replace(/\bPlaintiff seeks\b/g, "Plaintiff respectfully requests")
-        .replace(/\bplaintiff seeks\b/g, "plaintiff respectfully requests");
-
-    default:
-      return text;
-  }
-}
 
 // ── Utility ──────────────────────────────────────────────────────────────────
 

@@ -11,9 +11,19 @@
   "scripts": {
     "dev:api": "npm --workspace apps/api run dev",
     "build:api": "npm --workspace apps/api run build",
-    "test": "npm --workspace apps/api run test"
+    "test": "npm --workspace apps/api run test",
+    "eval:grounding": "tsx eval/grounding-precision.ts",
+    "eval:convergence": "CONFIRM_RESET=1 tsx eval/edit-convergence.ts",
+    "eval:full": "CONFIRM_RESET=1 tsx eval/run-full.ts",
+    "eval:simulate": "tsx eval/simulate-operator.ts"
   },
   "engines": {
     "node": ">=20.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "@types/pdfkit": "^0.13.3",
+    "pdfkit": "^0.14.0",
+    "tsx": "^4.15.6"
   }
 }
