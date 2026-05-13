@@ -50,7 +50,13 @@ let _cached: Env | null = null;
 export function loadEnv(): Env {
   if (_cached) return _cached;
 
-  const result = envSchema.safeParse(process.env);
+  // docker-compose passes unset optional vars as empty strings ("").
+  // Convert "" → undefined before Zod sees them so .optional() fields work.
+  const cleaned = Object.fromEntries(
+    Object.entries(process.env).map(([k, v]) => [k, v === "" ? undefined : v]),
+  );
+
+  const result = envSchema.safeParse(cleaned);
   if (!result.success) {
     const formatted = result.error.issues
       .map((e) => `  ${e.path.join(".")}: ${e.message}`)
