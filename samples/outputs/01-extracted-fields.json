@@ -1,0 +1,23 @@
+{
+  "documentId": "1c784d52-0cef-4b3e-8b38-92c3f78e809f",
+  "filename": "01-clean-complaint.pdf",
+  "ocrStrategy": "pdfplumber_text",
+  "ocrConfidence": 1.0,
+  "chunkCount": 28,
+  "fields": {
+    "document_type": "complaint",
+    "parties": {
+      "plaintiffs": ["Jane Smith"],
+      "defendants": ["Global Tech Inc.", "John Roe"],
+      "counsel": ["Morrison & Foerster LLP"]
+    },
+    "key_dates": [
+      { "label": "employment start date", "iso_date": "2020-01-15" },
+      { "label": "termination date", "iso_date": "2023-12-10" },
+      { "label": "EEOC charge filed", "iso_date": "2024-01-08" },
+      { "label": "right to sue letter issued", "iso_date": "2024-02-01" },
+      { "label": "complaint filed", "iso_date": "2024-02-20" },
+      { "label": "hearing date", "iso_date": "2024-04-15" }
+    ]
+  }
+}

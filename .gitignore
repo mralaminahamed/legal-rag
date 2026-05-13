@@ -54,6 +54,5 @@ pino-*.log
 *.swp
 *.swo
 
-# Evaluation outputs (generated at runtime)
+# Evaluation outputs — JSON results are generated at runtime; md summaries are committed
 eval/results/*.json
-samples/outputs/
