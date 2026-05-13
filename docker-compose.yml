@@ -1,3 +1,15 @@
+# Legal RAG — docker-compose stack
+#
+# Three services: db (pgvector), ocr (Python sidecar), api (Node.js).
+#
+# Ollama (optional, for LLM_PROVIDER=ollama):
+#   Ollama runs on the HOST machine, not inside Docker.
+#   Before starting the stack with Ollama:
+#     ollama serve
+#     ollama pull qwen2.5:14b-instruct-q5_K_M
+#   The api service reaches the host via host.docker.internal (Mac/Windows)
+#   or the host-gateway extra_host entry below (Linux).
+
 services:
   db:
     image: pgvector/pgvector:pg16
@@ -41,15 +53,22 @@ services:
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-legal}:${POSTGRES_PASSWORD:-secret}@db:5432/${POSTGRES_DB:-legalrag}
       OCR_SERVICE_URL: http://ocr:8000
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      LLM_PROVIDER: ${LLM_PROVIDER:-anthropic}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-sonnet-4-6}
       OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
       OPENAI_EMBEDDING_MODEL: ${OPENAI_EMBEDDING_MODEL:-text-embedding-3-small}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434/v1}
+      OLLAMA_CHAT_MODEL: ${OLLAMA_CHAT_MODEL:-qwen2.5:14b-instruct-q5_K_M}
       PORT_API: ${PORT_API:-3000}
       LOG_LEVEL: ${LOG_LEVEL:-info}
     ports:
       - "${PORT_API:-3000}:3000"
+    # host-gateway allows the container to reach Ollama on the host (Linux).
+    # On Mac/Windows, host.docker.internal resolves automatically.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       db:
         condition: service_healthy
