@@ -46,7 +46,7 @@ export function EditView({ draftId, section, currentContent, onClose }: EditView
     <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle className="text-sm font-semibold">
+          <DialogTitle>
             Edit — {SECTION_LABELS[section]}
           </DialogTitle>
           <DialogDescription className="sr-only">
