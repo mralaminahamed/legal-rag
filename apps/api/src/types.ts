@@ -49,3 +49,18 @@ export interface DraftCitation {
   snippet: string;
   score: number;
 }
+
+/** One generated section of a Case Fact Summary draft. */
+export interface SectionDraft {
+  draftId: string;
+  content: string;
+  citations: DraftCitation[];
+  groundingScore: number;
+}
+
+/** Full five-section draft result returned by the generation pipeline. */
+export interface DraftResult {
+  documentId: string;
+  sections: Record<CaseSummarySection, SectionDraft>;
+  providerUsed: string;
+}

@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { logger } from "./lib/logger.js";
 import { ingestRouter } from "./routes/ingest.js";
 import { retrieveRouter } from "./routes/retrieve.js";
-import { draftCitationsRouter } from "./routes/draft-citations.js";
+import { draftRouter } from "./routes/draft.js";
 
 const VERSION = "0.1.0";
 
@@ -22,7 +22,7 @@ export function buildApp(): Hono {
 
   app.route("/ingest", ingestRouter);
   app.route("/retrieve", retrieveRouter);
-  app.route("/draft", draftCitationsRouter);
+  app.route("/draft", draftRouter);
 
   return app;
 }
