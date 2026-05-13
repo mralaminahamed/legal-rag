@@ -290,7 +290,7 @@ The `LLMProvider` interface (`apps/api/src/llm/provider.ts`) defines two methods
 
 ## Evaluation
 
-Grounding precision — measured as the fraction of non-refusal sections whose full content embedding has cosine similarity ≥ 0.65 to its cited source chunk — reached 72.0% across five sample documents (three text PDFs + two image-only PDFs demonstrating OCR fallback). Edit-loop convergence reduced operator word-level edit distance by 74.4% from iteration 1 to iteration 5 (168 → 43), well above the 30% threshold. See [EVALUATION.md](EVALUATION.md) for full methodology, assumptions, and reproduction instructions.
+Grounding precision — measured as the fraction of non-refusal sections whose full content embedding has cosine similarity ≥ 0.70 to its cited source chunk — reached 72.0% across three sample documents (run-003; clean PDFs plus two image-only OCR variants). Edit-loop convergence reduced operator word-level edit distance by 74.4% from iteration 1 to iteration 5 (168 → 43), well above the 30% threshold. See [EVALUATION.md](EVALUATION.md) for full methodology, assumptions, and reproduction instructions.
 
 ---
 
@@ -304,6 +304,55 @@ Grounding precision — measured as the fraction of non-refusal sections whose f
 - **No async ingestion queue**: large PDFs can make the `/ingest` endpoint slow (OCR + chunking + embedding). A proper production system would return a job ID and use a message queue (e.g., BullMQ) for background processing.
 - **No auth or multi-tenancy**: all documents and drafts are globally visible. A production deployment would need at minimum an API key scheme and document-level ACLs.
 - **Retrieval cap for Ollama (3k chars/section)**: the evidence block passed to each section prompt is capped at 3,000 characters to fit within smaller open models' effective context. Cloud providers could accept the full top-8 chunks without degradation; this cap is a cost-driven concession to Ollama compatibility, not a fundamental constraint.
+
+---
+
+## Troubleshooting
+
+**`docker compose up` — OCR container keeps restarting**
+```
+# Check logs:
+docker compose logs ocr
+# Common cause: poppler not installed in image (required by pdf2image)
+# Fix: ensure Dockerfile has: RUN apt-get install -y poppler-utils
+```
+
+**`OPENAI_API_KEY` validation error on API startup**
+```bash
+# API fails fast if key is missing. Ensure .env has:
+OPENAI_API_KEY=sk-...
+LLM_PROVIDER=openai   # or anthropic / ollama
+```
+
+**Ingestion timeout on large PDFs (OCR sidecar)**
+```bash
+# Default timeout is 120s. Increase in docker-compose.yml under api environment:
+OCR_TIMEOUT_MS=300000
+# Or use a smaller/pre-split PDF for testing.
+```
+
+**`/draft` returns empty sections or all refusals**
+```bash
+# Document may not have been ingested with chunks. Verify:
+docker exec legal-rag-db-1 psql -U legal -d legalrag \
+  -c "SELECT COUNT(*) FROM chunks WHERE document_id='<uuid>';"
+# If 0 rows, re-ingest the document.
+```
+
+**Ollama: "model not found" on first draft generation**
+```bash
+# Pull the model on the host before starting the stack:
+ollama pull qwen2.5:14b-instruct-q5_K_M
+ollama serve
+# Then docker compose up
+```
+
+**Web UI shows CORS error / blank sidebar**
+```bash
+# API must be running on port 3000. Check:
+curl http://localhost:3000/health
+# If down, restart: docker compose restart api
+```
 
 ---
 

@@ -31,7 +31,7 @@ Sentence embeddings and chunk embeddings both use OpenAI `text-embedding-3-small
 - `citation_validity` = sentences with valid citation / sentences with citation
 - `grounding_precision` = sentences with similarity ≥ 0.70 / total sentences
 
-The 0.65 threshold was chosen empirically: it reliably separates passages that discuss the same clause from passages that are semantically unrelated, while accommodating the natural paraphrase distance between a short generated claim and a full paragraph source chunk.
+The 0.70 threshold was chosen empirically: it reliably separates passages that discuss the same clause from passages that are semantically unrelated, while accommodating the natural paraphrase distance between a short generated claim and a full paragraph source chunk.
 
 ### Refusal Behavior and Its Effect on Metrics
 
@@ -41,7 +41,7 @@ Grounding precision excludes refusal sentences from the denominator — a refusa
 
 ### Limitations
 
-- **Embedding similarity as a proxy for grounding**: cosine similarity ≥ 0.65 is a necessary but not sufficient condition for factual grounding. A sentence that closely paraphrases a chunk may score above the threshold while still misrepresenting a fact. An NLI-based verifier would be more precise but is out of scope for this timeline.
+- **Embedding similarity as a proxy for grounding**: cosine similarity ≥ 0.70 is a necessary but not sufficient condition for factual grounding. A sentence that closely paraphrases a chunk may score above the threshold while still misrepresenting a fact. An NLI-based verifier would be more precise but is out of scope for this timeline.
 - **Line-level splitting**: the evaluator measures one line/bullet at a time. Multi-sentence paragraphs are treated as a single unit; very long paragraphs may have inflated similarity due to topical breadth.
 - **Small sample set**: results are computed over 3–5 synthetic PDF inputs. Real legal documents are longer and noisier; results on those may differ.
 - **Citation density bias**: sections that generate more verbose text may dilute citation coverage even when every factual claim is grounded.
