@@ -18,6 +18,7 @@ function countWords(text: string): number {
  *
  * @param ops - Computed diff operations
  * @returns Aggregated stats: words added/removed/replaced and total edit distance
+ * @throws {never}
  * @author Al Amin Ahamed
  */
 export function computeStats(ops: DiffOp[]): DiffStats {
@@ -59,6 +60,7 @@ export function computeStats(ops: DiffOp[]): DiffStats {
  * @param original - Source text before operator edit
  * @param edited - Text after operator edit
  * @returns Structured DiffOp list and aggregate statistics
+ * @throws {never}
  * @author Al Amin Ahamed
  */
 export function computeDiff(

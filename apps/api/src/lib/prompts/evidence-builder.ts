@@ -10,6 +10,7 @@ const MAX_EVIDENCE_CHARS = 3_000;
  *
  * @param chunks - Ranked retrieved chunks, best first
  * @returns Multi-line XML string of <evidence> elements
+ * @throws {never}
  * @author Al Amin Ahamed
  */
 export function buildEvidenceBlock(chunks: RetrievedChunk[]): string {

@@ -32,6 +32,7 @@ Rules:
  *
  * @param rawText - Full document text from OCR
  * @returns User message string
+ * @throws {never}
  * @author Al Amin Ahamed
  */
 export function buildExtractUserMessage(rawText: string): string {
@@ -43,6 +44,7 @@ export function buildExtractUserMessage(rawText: string): string {
  *
  * @param rawText - Full document text from OCR
  * @returns Corrective user message string
+ * @throws {never}
  * @author Al Amin Ahamed
  */
 export function buildRetryUserMessage(rawText: string): string {

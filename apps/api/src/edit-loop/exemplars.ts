@@ -16,6 +16,7 @@ import type { DiffStats, EditClass, EditClassification } from "../types.js";
  * @param classification - LLM-assigned edit class
  * @param stats - Word-level diff statistics
  * @returns Signal score in [0, 1]
+ * @throws {never}
  * @author Al Amin Ahamed
  */
 export function computeSignalScore(

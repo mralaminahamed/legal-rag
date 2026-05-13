@@ -41,6 +41,7 @@ Return a JSON object:
  * @param diffOps - Structured diff operations from computeDiff
  * @param stats - Aggregate diff statistics for prompt context
  * @returns EditClassification with class, confidence, and reasoning
+ * @throws {Error} When LLM provider call fails or response cannot be parsed as valid JSON
  * @author Al Amin Ahamed
  */
 export async function classifyEdit(

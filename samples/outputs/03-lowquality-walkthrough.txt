@@ -1,0 +1,105 @@
+
+> @mralaminahamed/legal-rag@0.1.0 demo
+> tsx scripts/e2e-walkthrough.ts --file samples/inputs/03-low-quality-contract.pdf
+
+
+════════════════════════════════════════════════════════════════════════
+Legal RAG — E2E Walkthrough
+════════════════════════════════════════════════════════════════════════
+API: http://localhost:3000   Files: 03-low-quality-contract.pdf
+Edit-loop iterations per document: 3
+
+════════════════════════════════════════════════════════════════════════
+[1/1] 03-low-quality-contract.pdf
+════════════════════════════════════════════════════════════════════════
+
+[1] Ingesting...
+    document_id:    c27cf9ce-36d5-4c85-8da4-a9b6b48b2561
+    chunks:         3
+    ocr_strategy:   pdfplumber_text
+    ocr_confidence: 100.0%
+    document_type:  contract
+    plaintiffs:     (none)
+    defendants:     (none)
+    key_dates:      3
+
+[2] Generating initial draft...
+    Mean grounding: 26.3%
+
+────────────────────────────────────────────────────────────────────────
+INITIAL DRAFT
+────────────────────────────────────────────────────────────────────────
+
+§ Parties  (grounding: 66.0%  citations: 2)
+········································································
+Plaintiff Jane Smith ('Plaintiff') [c:2f1ebca9-c701-4e2b-90d5-47bbd8e30899] brings this action against Defendant Global Tech Inc. ('Defendant') [c:0e59476e-417c-4dea-9433-c2a215ae0c3f] and John Roe ('Defendant') [c:2f1ebca9-c701-4e2b-90d5-47bbd8e30899], CEO of Global Tech Inc. Counsel of record is not specified in the source documents.
+
+
+§ Key Dates  (grounding: 65.2%  citations: 2)
+········································································
+- Agreement entered into: 2020-01-15 [c:0e59476e-417c-4dea-9433-c2a215ae0c3f]
+- Employment commencement date: 2020-01-15 [c:0e59476e-417c-4dea-9433-c2a215ae0c3f]
+- Signed date: 2020-01-15 [c:2f1ebca9-c701-4e2b-90d5-47bbd8e30899]
+
+
+§ Issues / Allegations  (grounding: 0.0%  citations: 0)
+········································································
+Not specified in source documents.
+
+
+§ Procedural History  (grounding: 0.0%  citations: 0)
+········································································
+Not specified in source documents.
+
+
+§ Relief Sought  (grounding: 0.0%  citations: 0)
+········································································
+Not specified in source documents.
+
+
+[3] Edit-loop convergence (3 iterations)...
+
+────────────────────────────────────────────────────────────────────────
+FINAL DRAFT (after 3 edit-loop iterations)
+────────────────────────────────────────────────────────────────────────
+
+§ Parties  (grounding: 60.7%  citations: 2)
+········································································
+Plaintiff Jane Smith ('Plaintiff') [c:2f1ebca9-c701-4e2b-90d5-47bbd8e30899] brings this action against Defendant Global Tech Inc. ('Defendant') [c:0e59476e-417c-4dea-9433-c2a215ae0c3f] and John Roe ('Defendant') [c:2f1ebca9-c701-4e2b-90d5-47bbd8e30899].
+
+
+§ Key Dates  (grounding: 63.5%  citations: 2)
+········································································
+- Agreement entered into: 2020-01-15 [c:0e59476e-417c-4dea-9433-c2a215ae0c3f]
+- Employment commenced: 2020-01-15 [c:0e59476e-417c-4dea-9433-c2a215ae0c3f]
+- Signed date: 2020-01-15 [c:2f1ebca9-c701-4e2b-90d5-47bbd8e30899]
+
+
+§ Issues / Allegations  (grounding: 68.6%  citations: 1)
+········································································
+Plaintiff, Jane Smith, alleges wrongful termination due to the failure of Global Tech Inc. to provide the required 90 days written notice prior to termination, as stipulated in the Employment Agreement [c:0e59476e-417c-4dea-9433-c2a215ae0c3f]. Additionally, the plaintiff claims entitlement to compensation, including salary and stock options, which may be affected by the alleged improper termination [c:0e59476e-417c-4dea-9433-c2a215ae0c3f]. The governing law for this Agreement is the State of New York [c:4006c3f-34cf-48eb-98fd-195fbf6e7157].
+
+
+§ Procedural History  (grounding: 0.0%  citations: 0)
+········································································
+Not specified in source documents.
+
+
+§ Relief Sought  (grounding: 0.0%  citations: 0)
+········································································
+Not specified in source documents.
+
+
+[4] Edit-loop convergence (distance to operator-preferred form)
+Iteration     Dist to Preferred     Δ from Previous
+────────────────────────────────────────────────────────────────────────
+1             5                     —
+2             5                     = no change
+3             0                     ↓ 100% reduction
+────────────────────────────────────────────────────────────────────────
+TOTAL  5 → 0  ↓ 100% reduction over 3 iterations
+Grounding: 26.3%
+════════════════════════════════════════════════════════════════════════
+Demo complete.
+════════════════════════════════════════════════════════════════════════
+

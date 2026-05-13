@@ -1,0 +1,105 @@
+
+> @mralaminahamed/legal-rag@0.1.0 demo
+> tsx scripts/e2e-walkthrough.ts --file samples/inputs/02-scanned-notice.pdf
+
+
+════════════════════════════════════════════════════════════════════════
+Legal RAG — E2E Walkthrough
+════════════════════════════════════════════════════════════════════════
+API: http://localhost:3000   Files: 02-scanned-notice.pdf
+Edit-loop iterations per document: 3
+
+════════════════════════════════════════════════════════════════════════
+[1/1] 02-scanned-notice.pdf
+════════════════════════════════════════════════════════════════════════
+
+[1] Ingesting...
+    document_id:    6494e528-8dcd-4c9f-b5aa-d254cb552a7d
+    chunks:         4
+    ocr_strategy:   pdfplumber_text
+    ocr_confidence: 100.0%
+    document_type:  notice
+    plaintiffs:     Jane Smith
+    defendants:     Global Tech Inc.
+    key_dates:      2
+
+[2] Generating initial draft...
+    Mean grounding: 46.3%
+
+────────────────────────────────────────────────────────────────────────
+INITIAL DRAFT
+────────────────────────────────────────────────────────────────────────
+
+§ Parties  (grounding: 82.4%  citations: 2)
+········································································
+Plaintiff Jane Smith ('Plaintiff') [c:7348cd08-b5b9-4e93-a267-c01c8ae4c4d1] brings this action against Defendant Global Tech Inc. ('Defendant') [c:7348cd08-b5b9-4e93-a267-c01c8ae4c4d1]. Counsel for all parties are required to appear at the scheduled hearing on April 15, 2024, before the Honorable Judge Patricia Williams [c:330bb6c8-33fa-4464-a4b7-7dd7924fa9a8].
+
+
+§ Key Dates  (grounding: 68.9%  citations: 3)
+········································································
+- Hearing date: 2024-04-15 [c:330bb6c8-33fa-4464-a4b7-7dd7924fa9a8]
+- Issued by Clerk of Court: 2024-03-01 [c:e7f8b9c5-55b4-4faf-a8da-864cbc3c3e2e]
+- Notice of hearing date: 2024-03-15 [c:7348cd08-b5b9-4e93-a267-c01c8ae4c4d1]
+
+
+§ Issues / Allegations  (grounding: 0.0%  citations: 0)
+········································································
+Not specified in source documents.
+
+
+§ Procedural History  (grounding: 80.1%  citations: 3)
+········································································
+On March 1, 2024, the Clerk of Court issued a notice scheduling a hearing for April 15, 2024, at 9:00 AM before the Honorable Judge Patricia Williams in Courtroom 14B, requiring the appearance of counsel for all parties [c:e7f8b9c5-55b4-4faf-a8da-864cbc3c3e2e]. The notice also warned that failure to appear may result in sanctions, including dismissal of claims or entry of default judgment [c:50ef62be-2cc8-45fc-b992-4e850d5c77eb]. The case is identified as Jane Smith v. Global Tech Inc., under Case No: 2024-CV-005678 [c:7348cd08-b5b9-4e93-a267-c01c8ae4c4d1].
+
+
+§ Relief Sought  (grounding: 0.0%  citations: 0)
+········································································
+Not specified in source documents.
+
+
+[3] Edit-loop convergence (3 iterations)...
+
+────────────────────────────────────────────────────────────────────────
+FINAL DRAFT (after 3 edit-loop iterations)
+────────────────────────────────────────────────────────────────────────
+
+§ Parties  (grounding: 82.1%  citations: 2)
+········································································
+Plaintiff Jane Smith ('Plaintiff') [c:7348cd08-b5b9-4e93-a267-c01c8ae4c4d1] brings this action against Defendant Global Tech Inc. ('Defendant') [c:7348cd08-b5b9-4e93-a267-c01c8ae4c4d1]. Counsel for all parties are required to appear at the scheduled hearing before the Honorable Judge Patricia Williams [c:330bb6c8-33fa-4464-a4b7-7dd7924fa9a8].
+
+
+§ Key Dates  (grounding: 69.7%  citations: 3)
+········································································
+- Hearing date: 2024-04-15 [c:330bb6c8-33fa-4464-a4b7-7dd7924fa9a8]
+- Issued date by Clerk of Court: 2024-03-01 [c:e7f8b9c5-55b4-4faf-a8da-864cbc3c3e2e]
+- Notice of hearing date: 2024-03-15 [c:7348cd08-b5b9-4e93-a267-c01c8ae4c4d1]
+
+
+§ Issues / Allegations  (grounding: 0.0%  citations: 0)
+········································································
+Not specified in source documents.
+
+
+§ Procedural History  (grounding: 0.0%  citations: 0)
+········································································
+On March 1, 2024, the Clerk of Court issued a notice of hearing scheduled for April 15, 2024, at 9:00 AM before the Honorable Judge Patricia Williams in Courtroom 14B [c:e7f8b9c5]. The notice specified that counsel for all parties are required to appear [c:330bb6c8]. Additionally, it warned that failure to appear may result in sanctions, including dismissal of claims or entry of default judgment [c:50ef62be]. The case is identified as Jane Smith v. Global Tech Inc., Case No: 2024-CV-005678 [c:7348cd08]. Currently, the procedural posture of the case is set for the upcoming hearing, with no prior motions or rulings indicated in the source documents.
+
+
+§ Relief Sought  (grounding: 0.0%  citations: 0)
+········································································
+Not specified in source documents.
+
+
+[4] Edit-loop convergence (distance to operator-preferred form)
+Iteration     Dist to Preferred     Δ from Previous
+────────────────────────────────────────────────────────────────────────
+1             0                     —
+2             0                     = no change
+3             0                     = no change
+────────────────────────────────────────────────────────────────────────
+TOTAL  0 → 0  —
+Grounding: 46.3%
+════════════════════════════════════════════════════════════════════════
+Demo complete.
+════════════════════════════════════════════════════════════════════════
+

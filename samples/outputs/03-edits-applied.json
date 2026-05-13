@@ -1,77 +1,68 @@
 [
   {
+    "iteration": 1,
     "section": "parties",
-    "editId": "e1a2b3c4-d5e6-f7a8-b9c0-d1e2f3a4b5c6",
-    "originalSnippet": "Plaintiff Jane Smith [c:...] brings this action against Defendants Global Tech Inc. and John Roe",
-    "editedSnippet": "Plaintiff Jane Smith [c:...] brings this action against Defendants Global Tech Inc. and John Roe",
-    "editPattern": "P. Specter → Mr. P. Specter, Esq.",
-    "wordEditDistance": 0,
-    "classification": {
-      "class": "formatting",
-      "confidence": 0.91,
-      "reasoning": "No match found for this document; pattern targets future documents mentioning P. Specter"
-    },
-    "signalScore": 0.2,
-    "promotedToExemplar": false
+    "edit_id": "145b1665-2a0a-4444-9ab0-a1f2f5d4ae5f",
+    "edit_class": "addition",
+    "signal_score": 0.7,
+    "promoted_to_exemplar": true,
+    "pattern": "Add role labels and 'Counsel of Record' suffix",
+    "original_preview": "Plaintiff Jane Smith ('Plaintiff') ... Counsel for Plaintiff is Morrison & Foerster LLP",
+    "edited_preview": "Plaintiff Jane Smith ('Plaintiff') ... Counsel for Plaintiff is Morrison & Foerster LLP (Counsel of Record for Plaintiff)"
   },
   {
-    "section": "key_dates",
-    "editId": "f2b3c4d5-e6f7-a8b9-c0d1-e2f3a4b5c6d7",
-    "originalSnippet": "Employment commenced: January 15, 2020",
-    "editedSnippet": "Employment commenced: 2020-01-15",
-    "editPattern": "Long-form date → ISO 8601",
-    "wordEditDistance": 7,
-    "classification": {
-      "class": "formatting",
-      "confidence": 0.96,
-      "reasoning": "Date format standardised from written to ISO 8601; no factual change"
-    },
-    "signalScore": 0.2,
-    "promotedToExemplar": false
-  },
-  {
-    "section": "issues",
-    "editId": "a3c4d5e6-f7a8-b9c0-d1e2-f3a4b5c6d7e8",
-    "originalSnippet": "1. Breach of employment contract...\n2. Retaliation...\n3. Failure to pay...",
-    "editedSnippet": "Count 1: Breach of employment contract...\nCount 2: Retaliation...\nCount 3: Failure to pay...",
-    "editPattern": "N. → Count N:",
-    "wordEditDistance": 6,
-    "classification": {
-      "class": "addition",
-      "confidence": 0.88,
-      "reasoning": "Legal count prefix added to numbered claims; increases formality and specificity"
-    },
-    "signalScore": 0.4,
-    "promotedToExemplar": false
-  },
-  {
+    "iteration": 1,
     "section": "procedural_history",
-    "editId": "b4d5e6f7-a8b9-c0d1-e2f3-a4b5c6d7e8f9",
-    "originalSnippet": "Plaintiff files an EEOC charge... The EEOC issues a Right to Sue letter... Plaintiff timely files this complaint",
-    "editedSnippet": "Plaintiff filed an EEOC charge... The EEOC issued a Right to Sue letter... Plaintiff timely filed this complaint",
-    "editPattern": "Present tense → past tense for procedural events",
-    "wordEditDistance": 3,
-    "classification": {
-      "class": "rephrase",
-      "confidence": 0.94,
-      "reasoning": "Verb tense corrected from present to past for completed procedural events; no factual change"
-    },
-    "signalScore": 0.5,
-    "promotedToExemplar": true
+    "edit_id": "d4a0ba58-bbfc-495f-b075-f9a74ca2c30a",
+    "edit_class": "rephrase",
+    "signal_score": 0.5,
+    "promoted_to_exemplar": true,
+    "pattern": "Present tense → past tense for completed procedural events",
+    "original_preview": "A hearing on the matter is scheduled for April 15, 2024",
+    "edited_preview": "A hearing on the matter was scheduled for April 15, 2024"
   },
   {
+    "iteration": 1,
     "section": "relief",
-    "editId": "c5e6f7a8-b9c0-d1e2-f3a4-b5c6d7e8f9a0",
-    "originalSnippet": "Plaintiff seeks [c:...]:",
-    "editedSnippet": "Plaintiff respectfully requests [c:...]:",
-    "editPattern": "Plaintiff seeks → Plaintiff respectfully requests",
-    "wordEditDistance": 2,
-    "classification": {
-      "class": "rephrase",
-      "confidence": 0.89,
-      "reasoning": "More formal legal phrasing substituted; no factual change"
-    },
-    "signalScore": 0.5,
-    "promotedToExemplar": true
+    "edit_id": "c904cffb-a4c5-4dc9-9b9b-96b4f616807a",
+    "edit_class": "factual_correction",
+    "signal_score": 0.9,
+    "promoted_to_exemplar": true,
+    "pattern": "Standardise prayer-for-relief phrasing",
+    "original_preview": "Attorneys' fees and costs",
+    "edited_preview": "Reasonable attorneys' fees and costs of suit"
+  },
+  {
+    "iteration": 2,
+    "section": "parties",
+    "edit_id": "eeee8d97-625d-4d0d-8697-3ca7cbb41b39",
+    "edit_class": "addition",
+    "signal_score": 0.7,
+    "promoted_to_exemplar": true,
+    "pattern": "Add role labels (model learning from iteration 1 exemplar)",
+    "original_preview": "Plaintiff Jane Smith ('Plaintiff') ... Morrison & Foerster LLP",
+    "edited_preview": "Plaintiff Jane Smith ('Plaintiff') ... Morrison & Foerster LLP (Counsel of Record for Plaintiff)"
+  },
+  {
+    "iteration": 2,
+    "section": "procedural_history",
+    "edit_id": "ab95461e-77fd-44c3-a27c-9f022416ad3d",
+    "edit_class": "rephrase",
+    "signal_score": 0.5,
+    "promoted_to_exemplar": true,
+    "pattern": "Past tense enforcement (preference update fired after 2 edits)",
+    "original_preview": "A hearing on the matter is scheduled",
+    "edited_preview": "A hearing on the matter was scheduled"
+  },
+  {
+    "iteration": 2,
+    "section": "relief",
+    "edit_id": "1f130b58-5693-46b5-90d6-00d23a5384a8",
+    "edit_class": "addition",
+    "signal_score": 0.9,
+    "promoted_to_exemplar": true,
+    "pattern": "\"Compensatory damages of\" → \"Compensatory damages in the amount of\"",
+    "original_preview": "Compensatory damages of $750,000",
+    "edited_preview": "Compensatory damages in the amount of $750,000"
   }
 ]

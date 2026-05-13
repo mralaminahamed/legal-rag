@@ -11,6 +11,7 @@ const VERSION = "0.1.0";
  * Builds and returns the Hono application instance with all routes registered.
  *
  * @returns Configured Hono application
+ * @throws {never}
  * @author Al Amin Ahamed
  */
 export function buildApp(): Hono {

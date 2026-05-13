@@ -33,6 +33,7 @@ function cosineSimilarity(a: number[], b: number[]): number {
  * @param content - Generated section text to evaluate
  * @param citedChunks - Chunks whose IDs appeared as citations in the content
  * @returns Max cosine similarity in [0, 1]; 0 when no chunks provided
+ * @throws {Error} When embedTexts fails due to OpenAI API error or network failure
  * @author Al Amin Ahamed
  */
 export async function verifyGrounding(

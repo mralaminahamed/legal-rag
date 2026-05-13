@@ -125,6 +125,7 @@ export class OllamaProvider implements LLMProvider {
    * pulled on the host. Logs a warning with pull instructions if not found.
    *
    * @returns true if the model is available, false otherwise
+   * @throws {never} Failures are logged and swallowed; never re-thrown
    * @author Al Amin Ahamed
    */
   async ping(): Promise<boolean> {

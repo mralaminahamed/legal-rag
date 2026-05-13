@@ -25,6 +25,7 @@ Rules:
  *
  * @param ctx - Retrieved chunks, exemplars, and preferences
  * @returns System and user prompt strings
+ * @throws {never}
  * @author Al Amin Ahamed
  */
 export function buildPartiesPrompt(ctx: PromptContext): { system: string; user: string } {

@@ -17,6 +17,7 @@ export interface PromptContext {
  * @param section - Target case summary section
  * @param ctx - Retrieved chunks, exemplars, and preferences
  * @returns System and user prompt strings ready for the LLM provider
+ * @throws {never}
  * @author Al Amin Ahamed
  */
 export function buildSectionPrompt(

@@ -44,6 +44,7 @@ function emptyFields(): DocumentFields {
  *
  * @param rawText - Full document text from the OCR sidecar
  * @returns Parsed DocumentFields, or empty fields if extraction fails
+ * @throws {Error} When LLM provider fails after retry; returns empty fields on parse failure
  * @author Al Amin Ahamed
  */
 export async function extractStructuredFields(

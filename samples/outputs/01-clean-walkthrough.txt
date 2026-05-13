@@ -1,0 +1,121 @@
+
+> @mralaminahamed/legal-rag@0.1.0 demo
+> tsx scripts/e2e-walkthrough.ts --file samples/inputs/01-clean-complaint.pdf
+
+
+════════════════════════════════════════════════════════════════════════
+Legal RAG — E2E Walkthrough
+════════════════════════════════════════════════════════════════════════
+API: http://localhost:3000   Files: 01-clean-complaint.pdf
+Edit-loop iterations per document: 3
+
+════════════════════════════════════════════════════════════════════════
+[1/1] 01-clean-complaint.pdf
+════════════════════════════════════════════════════════════════════════
+
+[1] Ingesting...
+    document_id:    e9e566b4-fd1c-41d6-9c33-29fc1f81f622
+    chunks:         5
+    ocr_strategy:   pdfplumber_text
+    ocr_confidence: 100.0%
+    document_type:  complaint
+    plaintiffs:     Jane Smith
+    defendants:     Global Tech Inc., John Roe
+    key_dates:      7
+
+[2] Generating initial draft...
+    Mean grounding: 60.5%
+
+────────────────────────────────────────────────────────────────────────
+INITIAL DRAFT
+────────────────────────────────────────────────────────────────────────
+
+§ Parties  (grounding: 83.9%  citations: 2)
+········································································
+Plaintiff Jane Smith ('Plaintiff') [c:29d7ecd1-d025-4b51-8736-04692c350bb2] brings this action against Defendants Global Tech Inc. ('Defendant') [c:29d7ecd1-d025-4b51-8736-04692c350bb2] and John Roe ('Defendant') [c:29d7ecd1-d025-4b51-8736-04692c350bb2]. Counsel for Plaintiff is Morrison & Foerster LLP [c:9b006f07-939f-46b6-a47e-fb4ed08ce278].
+
+
+§ Key Dates  (grounding: 67.5%  citations: 3)
+········································································
+- Incident date: 2023-11-05 [c:5f2a5da4-bc83-4a6a-b009-9d52fc405e08]
+- EEOC charge filed: 2024-01-08 [c:5f2a5da4-bc83-4a6a-b009-9d52fc405e08]
+- EEOC Right to Sue letter issued: 2024-02-01 [c:5f2a5da4-bc83-4a6a-b009-9d52fc405e08]
+- Filing date: 2024-02-20 [c:9b006f07-939f-46b6-a47e-fb4ed08ce278]
+- Motion to dismiss filed: 2024-03-01 [c:d4737a03-98bf-4626-a5a5-3caa9103a0b4]
+- Plaintiff's opposition due: 2024-03-22 [c:d4737a03-98bf-4626-a5a5-3caa9103a0b4]
+- Hearing scheduled: 2024-04-15 [c:d4737a03-98bf-4626-a5a5-3caa9103a0b4]
+
+
+§ Issues / Allegations  (grounding: 77.2%  citations: 3)
+········································································
+Plaintiff Jane Smith alleges breach of contract due to her termination without the required 90-day notice period or equivalent compensation [c:58082a51-70e0-4009-9d11-b4bd6bbd4d75]. She claims wrongful termination in violation of applicable law, asserting that her termination was without cause and breached the terms of her employment agreement [c:9b006f07-939f-46b6-a47e-fb4ed08ce278]. Additionally, Plaintiff alleges that Defendant retaliated against her for reporting accounting irregularities to the Audit Committee [c:5f2a5da4-bc83-4a6a-b009-9d52fc405e08]. She also seeks recovery of unpaid bonuses and stock options that vested prior to her termination [c:5f2a5da4-bc83-4a6a-b009-9d52fc405e08].
+
+
+§ Procedural History  (grounding: 0.0%  citations: 0)
+········································································
+On January 8, 2024, Plaintiff filed an EEOC charge [c:5f2a5da4]. The EEOC issued a Right to Sue letter on February 1, 2024 [c:5f2a5da4]. Subsequently, Plaintiff filed her complaint for breach of contract and wrongful termination on February 20, 2024 [c:9b006f07]. Defendant filed a motion to dismiss on March 1, 2024 [c:d4737a03]. Plaintiff's opposition to the motion is due on March 22, 2024 [c:d4737a03]. A hearing on the matter is scheduled for April 15, 2024, at 9:00 AM [c:d4737a03]. The case is currently pending before the United States District Court for the Southern District of New York, under Case No: 2024-CV-005678 [c:29d7ecd1].
+
+
+§ Relief Sought  (grounding: 74.3%  citations: 1)
+········································································
+- Compensatory damages in the amount of $750,000 [c:d4737a03-98bf-4626-a5a5-3caa9103a0b4]  
+- Punitive damages as allowed by law [c:d4737a03-98bf-4626-a5a5-3caa9103a0b4]  
+- Lost wages, benefits, and stock options [c:d4737a03-98bf-4626-a5a5-3caa9103a0b4]  
+- Attorneys' fees and costs [c:d4737a03-98bf-4626-a5a5-3caa9103a0b4]  
+- Such other and further relief as the Court deems just [c:d4737a03-98bf-4626-a5a5-3caa9103a0b4]  
+
+
+[3] Edit-loop convergence (3 iterations)...
+
+────────────────────────────────────────────────────────────────────────
+FINAL DRAFT (after 3 edit-loop iterations)
+────────────────────────────────────────────────────────────────────────
+
+§ Parties  (grounding: 83.9%  citations: 2)
+········································································
+Plaintiff Jane Smith ('Plaintiff') [c:29d7ecd1-d025-4b51-8736-04692c350bb2] brings this action against Defendants Global Tech Inc. ('Defendant') [c:29d7ecd1-d025-4b51-8736-04692c350bb2] and John Roe ('Defendant') [c:29d7ecd1-d025-4b51-8736-04692c350bb2]. Counsel for Plaintiff is Morrison & Foerster LLP [c:9b006f07-939f-46b6-a47e-fb4ed08ce278].
+
+
+§ Key Dates  (grounding: 67.5%  citations: 3)
+········································································
+- Incident date: 2023-11-05 [c:5f2a5da4-bc83-4a6a-b009-9d52fc405e08]
+- EEOC charge filed: 2024-01-08 [c:5f2a5da4-bc83-4a6a-b009-9d52fc405e08]
+- EEOC Right to Sue letter issued: 2024-02-01 [c:5f2a5da4-bc83-4a6a-b009-9d52fc405e08]
+- Filing date: 2024-02-20 [c:9b006f07-939f-46b6-a47e-fb4ed08ce278]
+- Motion to dismiss filed: 2024-03-01 [c:d4737a03-98bf-4626-a5a5-3caa9103a0b4]
+- Plaintiff's opposition due: 2024-03-22 [c:d4737a03-98bf-4626-a5a5-3caa9103a0b4]
+- Hearing scheduled: 2024-04-15 [c:d4737a03-98bf-4626-a5a5-3caa9103a0b4]
+
+
+§ Issues / Allegations  (grounding: 76.3%  citations: 3)
+········································································
+Plaintiff Jane Smith alleges breach of employment contract due to her termination without the required 90-day notice or compensation in lieu of notice [c:58082a51-70e0-4009-9d11-b4bd6bbd4d75]. She claims wrongful termination in violation of applicable law, asserting that her termination was without cause and contrary to her written employment agreement [c:9b006f07-939f-46b6-a47e-fb4ed08ce278]. Additionally, Plaintiff alleges retaliation for reporting accounting irregularities to the Audit Committee [c:5f2a5da4-bc83-4a6a-b009-9d52fc405e08]. She also seeks recovery for unpaid bonuses and stock options that vested prior to her termination [c:5f2a5da4-bc83-4a6a-b009-9d52fc405e08].
+
+
+§ Procedural History  (grounding: 64.1%  citations: 2)
+········································································
+On January 8, 2024, Plaintiff filed an EEOC charge [c:5f2a5da4]. The EEOC issued a Right to Sue letter on February 1, 2024 [c:5f2a5da4]. Subsequently, Plaintiff filed her complaint for breach of contract and wrongful termination on February 20, 2024 [c:9b006f07-939f-46b6-a47e-fb4ed08ce278]. Defendant filed a motion to dismiss on March 1, 2024 [c:d4737a03-98bf-4626-a5a5-3caa9103a0b4]. Plaintiff's opposition to the motion is due on March 22, 2024 [c:d4737a03-98bf-4626-a5a5-3caa9103a0b4]. A hearing on the matter is scheduled for April 15, 2024, at 9:00 AM [c:d4737a03-98bf-4626-a5a5-3caa9103a0b4].
+
+
+§ Relief Sought  (grounding: 74.3%  citations: 1)
+········································································
+- Compensatory damages in the amount of $750,000 [c:d4737a03-98bf-4626-a5a5-3caa9103a0b4]  
+- Punitive damages as allowed by law [c:d4737a03-98bf-4626-a5a5-3caa9103a0b4]  
+- Lost wages, benefits, and stock options [c:d4737a03-98bf-4626-a5a5-3caa9103a0b4]  
+- Attorneys' fees and costs [c:d4737a03-98bf-4626-a5a5-3caa9103a0b4]  
+- Such other and further relief as the Court deems just [c:d4737a03-98bf-4626-a5a5-3caa9103a0b4]  
+
+
+[4] Edit-loop convergence (distance to operator-preferred form)
+Iteration     Dist to Preferred     Δ from Previous
+────────────────────────────────────────────────────────────────────────
+1             19                    —
+2             22                    ↑ 16% increase
+3             19                    ↓ 14% reduction
+────────────────────────────────────────────────────────────────────────
+TOTAL  19 → 19  = no change
+Grounding: 60.5%
+════════════════════════════════════════════════════════════════════════
+Demo complete.
+════════════════════════════════════════════════════════════════════════
+

@@ -22,6 +22,7 @@ interface RankedItem {
  * @param queryEmbedding - 1536-dim float array from OpenAI
  * @param topK - Maximum results to return
  * @returns Ranked chunks, best first
+ * @throws {Error} When database query or embedding API call fails
  * @author Al Amin Ahamed
  */
 export async function vectorSearch(
@@ -61,6 +62,7 @@ export async function vectorSearch(
  * @param queryText - Natural-language query string
  * @param topK - Maximum results to return
  * @returns Ranked chunks, best first
+ * @throws {Error} When database query fails
  * @author Al Amin Ahamed
  */
 export async function fullTextSearch(
@@ -102,6 +104,7 @@ export async function fullTextSearch(
  * @param lists - Array of ranked result lists (each sorted best-first)
  * @param k - RRF constant (default 60, per standard literature)
  * @returns Single merged list sorted by RRF score, normalized to [0, 1]
+ * @throws {never}
  * @author Al Amin Ahamed
  */
 export function reciprocalRankFusion(
@@ -173,6 +176,7 @@ export async function hybridRetrieve(
  * @param queries - Section-specific query strings from SECTION_QUERIES
  * @param topK - Final result count
  * @returns Top-K deduplicated chunks, normalized to [0, 1]
+ * @throws {Error} When embedding API call or database query fails
  * @author Al Amin Ahamed
  */
 export async function retrieveForSection(

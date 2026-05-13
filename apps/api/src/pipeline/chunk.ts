@@ -23,6 +23,7 @@ const BREAKPOINT_ABSOLUTE = 0.35;
  *
  * @param rawText - Full document text from OCR
  * @returns Array of Chunk objects with text, sentenceCount, charCount
+ * @throws {Error} When embedding API call fails or returns unexpected dimensions
  * @author Al Amin Ahamed
  */
 export async function chunkDocument(rawText: string): Promise<Chunk[]> {

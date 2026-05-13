@@ -39,6 +39,7 @@ Rules:
  * accumulated since the last update (tracked via style_preferences.edit_count).
  *
  * @param section - Case summary section name
+ * @throws {never} Failures are caught internally and logged; never re-thrown to caller
  * @author Al Amin Ahamed
  */
 export async function updateStylePreferences(section: string): Promise<void> {
