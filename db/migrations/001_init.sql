@@ -1,11 +1,11 @@
 -- 001_init.sql
 -- Initial schema for legal-rag: documents, chunks, drafts, edits, exemplars, style preferences.
--- Verbatim from IMPLEMENTATION_PLAN.md § 6.
+-- Verbatim from IMPLEMENTATION_PLAN.md § 6. All statements idempotent (IF NOT EXISTS).
 
 CREATE EXTENSION IF NOT EXISTS vector;
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
-CREATE TABLE documents (
+CREATE TABLE IF NOT EXISTS documents (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     filename        TEXT NOT NULL,
     document_type   TEXT,
@@ -16,7 +16,7 @@ CREATE TABLE documents (
     created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE TABLE chunks (
+CREATE TABLE IF NOT EXISTS chunks (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     document_id     UUID NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
     chunk_index     INT  NOT NULL,
@@ -26,11 +26,11 @@ CREATE TABLE chunks (
     created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX chunks_doc_idx        ON chunks (document_id);
-CREATE INDEX chunks_embedding_idx  ON chunks USING hnsw (embedding vector_cosine_ops);
-CREATE INDEX chunks_text_gin_idx   ON chunks USING gin (to_tsvector('english', text));
+CREATE INDEX IF NOT EXISTS chunks_doc_idx        ON chunks (document_id);
+CREATE INDEX IF NOT EXISTS chunks_embedding_idx  ON chunks USING hnsw (embedding vector_cosine_ops);
+CREATE INDEX IF NOT EXISTS chunks_text_gin_idx   ON chunks USING gin (to_tsvector('english', text));
 
-CREATE TABLE drafts (
+CREATE TABLE IF NOT EXISTS drafts (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     document_id     UUID NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
     section         TEXT NOT NULL,           -- 'parties' | 'key_dates' | ...
@@ -40,7 +40,7 @@ CREATE TABLE drafts (
     iteration       INT  NOT NULL DEFAULT 1
 );
 
-CREATE TABLE edits (
+CREATE TABLE IF NOT EXISTS edits (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     draft_id        UUID NOT NULL REFERENCES drafts(id) ON DELETE CASCADE,
     section         TEXT NOT NULL,
@@ -51,7 +51,7 @@ CREATE TABLE edits (
     created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE TABLE edit_exemplars (
+CREATE TABLE IF NOT EXISTS edit_exemplars (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     section         TEXT NOT NULL,
     before_text     TEXT NOT NULL,
@@ -62,10 +62,10 @@ CREATE TABLE edit_exemplars (
     created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX exemplars_section_idx    ON edit_exemplars (section);
-CREATE INDEX exemplars_embedding_idx  ON edit_exemplars USING hnsw (embedding vector_cosine_ops);
+CREATE INDEX IF NOT EXISTS exemplars_section_idx    ON edit_exemplars (section);
+CREATE INDEX IF NOT EXISTS exemplars_embedding_idx  ON edit_exemplars USING hnsw (embedding vector_cosine_ops);
 
-CREATE TABLE style_preferences (
+CREATE TABLE IF NOT EXISTS style_preferences (
     section         TEXT PRIMARY KEY,
     preferences     JSONB NOT NULL,          -- accumulating preference profile
     edit_count      INT  NOT NULL DEFAULT 0,
