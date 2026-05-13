@@ -96,7 +96,7 @@ export async function updateStylePreferences(section: string): Promise<void> {
 
   await sql`
     INSERT INTO style_preferences (section, preferences, edit_count, updated_at)
-    VALUES (${section}, ${JSON.stringify(preferences)}::jsonb, ${totalEdits}, NOW())
+    VALUES (${section}, ${sql.json(preferences)}, ${totalEdits}, NOW())
     ON CONFLICT (section) DO UPDATE
       SET preferences = EXCLUDED.preferences,
           edit_count  = EXCLUDED.edit_count,

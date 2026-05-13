@@ -77,7 +77,7 @@ editRouter.post("/", async (c) => {
       ${section},
       ${original},
       ${edited_text},
-      ${JSON.stringify(ops)}::jsonb,
+      ${sql.json(ops)},
       ${classification.class}
     )
     RETURNING id
