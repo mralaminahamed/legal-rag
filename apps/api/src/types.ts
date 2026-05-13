@@ -64,3 +64,40 @@ export interface DraftResult {
   sections: Record<CaseSummarySection, SectionDraft>;
   providerUsed: string;
 }
+
+// ── Edit-loop types ───────────────────────────────────────────────────────────
+
+export interface DiffOp {
+  kind: "equal" | "insert" | "delete" | "replace";
+  originalRange: [number, number];
+  editedRange: [number, number];
+  originalText: string;
+  editedText: string;
+}
+
+export interface DiffStats {
+  wordsAdded: number;
+  wordsRemoved: number;
+  wordsReplaced: number;
+  totalEditDistance: number;
+}
+
+export type EditClass =
+  | "rephrase"
+  | "factual_correction"
+  | "formatting"
+  | "omission"
+  | "addition";
+
+export interface EditClassification {
+  class: EditClass;
+  confidence: number;
+  reasoning: string;
+}
+
+export interface StylePreferences {
+  tone?: "formal" | "neutral" | "informal";
+  avoid_phrases: string[];
+  prefer_phrases: string[];
+  formatting_rules: string[];
+}

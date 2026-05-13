@@ -3,6 +3,7 @@ import { logger } from "./lib/logger.js";
 import { ingestRouter } from "./routes/ingest.js";
 import { retrieveRouter } from "./routes/retrieve.js";
 import { draftRouter } from "./routes/draft.js";
+import { editRouter } from "./routes/edit.js";
 
 const VERSION = "0.1.0";
 
@@ -23,6 +24,7 @@ export function buildApp(): Hono {
   app.route("/ingest", ingestRouter);
   app.route("/retrieve", retrieveRouter);
   app.route("/draft", draftRouter);
+  app.route("/edit", editRouter);
 
   return app;
 }
