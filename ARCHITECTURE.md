@@ -84,6 +84,19 @@ For each of the five sections:
 - **`OpenAIProvider`** — OpenAI Chat Completions with `response_format: json_object` for `completeJSON`. Temperature 0.2.
 - **`OllamaProvider`** — OpenAI SDK pointed at `OLLAMA_BASE_URL`. Temperature 0.3 (higher than cloud providers because smaller open models show more output variance at 0.2, occasionally producing repetitive or degenerate completions). `completeJSON` tries `json_object` format first and falls back to plain completion + `extractJsonFromText` if the model/version doesn't support it. `ping()` checks that the configured model is pulled on the host before the first generation call.
 
+### UI Layer (`apps/web/`)
+
+React 19 + Vite + TypeScript strict SPA. Tailwind CSS v4 (`@tailwindcss/vite` plugin — no postcss required). shadcn/ui components installed via CLI. `@tanstack/react-query` v5 for server state. No routing library — view state is `useState<"upload"|"draft"|"comparison">`.
+
+| View | Purpose |
+|------|---------|
+| `UploadView` | Drag-and-drop or file picker; multi-stage progress bar (Uploading → Extracting → Embedding → Saving); calls `POST /ingest` |
+| `DraftView` | Five `SectionCard` components with inline citation badges (`CitationBadge`), grounding score, and per-section edit button; "Re-generate" triggers draft 2 |
+| `EditView` | Dialog modal pre-filled with section content; calls `POST /edit`; toast shows classification, signal score, and exemplar promotion status |
+| `ComparisonView` | Two-column grid; `WordDiff` component renders green additions / red strikethrough deletions using `diffWords` from the `diff` library; header shows grounding delta and total edit distance |
+
+`CitationBadge` parses `[c:UUID]` markers inline, renders pill badges, and shows source chunk text in a hover Popover (fetches `GET /drafts/:id/citations`, cached by TanStack Query). The API client (`lib/api-client.ts`) uses Zod schemas to validate every response, matching the shape of `lib/types.ts` against the API contract at runtime. In Docker, the web service is served via nginx (port 5173→80) with SPA fallback (`try_files $uri $uri/ /index.html`). In development, Vite proxies `/api/*` to `http://localhost:3000`.
+
 ### Edit Loop (`apps/api/src/edit-loop/`)
 
 `POST /edit` pipeline:

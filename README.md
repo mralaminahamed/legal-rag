@@ -6,6 +6,8 @@
 
 This system ingests legal PDFs and images (including low-quality scans), extracts structured fields, and generates a grounded five-section Case Fact Summary covering Parties, Key Dates, Issues/Allegations, Procedural History, and Relief Sought. Every factual claim in the generated text carries an inline citation referencing the exact source chunk it was drawn from. A retrieval inspector endpoint exposes the evidence behind any draft section, making the grounding chain fully auditable.
 
+A minimal React web UI (`apps/web/`) provides a browser-based workflow: drag-and-drop upload, auto-generated draft view with inline citation badges, section-level edit modal with signal classification feedback, and a side-by-side draft comparison view with word-level diff highlighting.
+
 The system is designed to improve over time from operator corrections. When an editor revises a generated section, the edit is diffed, classified (rephrase, factual correction, formatting, omission, or addition), and — if the signal is strong enough — embedded and stored as a few-shot exemplar. Subsequent drafts on similar documents retrieve those exemplars and inject a learned style-preference profile, reducing the operator's correction burden with each iteration. The chat layer is intentionally model-agnostic: Anthropic Claude, OpenAI GPT-4o-mini, and a local Ollama model all implement the same `LLMProvider` interface and are switchable with a single environment variable. Embeddings are pinned to OpenAI `text-embedding-3-small` at 1536 dimensions — this is a schema-level commitment, not a pluggability gap.
 
 ## Architecture
@@ -103,12 +105,20 @@ docker compose restart api
 
 ## Running
 
-**First, verify all three services are healthy:**
+**First, verify all services are healthy:**
 
 ```bash
 curl http://localhost:3000/health   # {"status":"ok","service":"api","version":"0.1.0"}
 curl http://localhost:8000/health   # {"status":"ok","service":"ocr","version":"0.1.0"}
 ```
+
+**Open the web UI:**
+
+```
+http://localhost:5173
+```
+
+Upload a document with drag-and-drop or the file picker. The system ingests, generates a five-section draft, and displays inline citation badges. Click any section's **Edit** button to submit a correction — the system diffs, classifies, and stores the signal. Use **Re-generate draft** to produce Draft 2, then compare them side-by-side.
 
 **Ingest a document:**
 
