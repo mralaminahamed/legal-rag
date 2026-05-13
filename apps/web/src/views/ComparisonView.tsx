@@ -94,7 +94,7 @@ export function ComparisonView({ draft1, draft2, onBack }: ComparisonViewProps) 
                   </CardHeader>
                   <CardContent className="p-3">
                     <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">
-                      {s1?.content ?? <span className="italic text-slate-400">—</span>}
+                      {s1 ? s1.content.replace(/\[c:[0-9a-f-]+\]/g, "").replace(/\s{2,}/g, " ").trim() : <span className="italic text-slate-400">—</span>}
                     </p>
                   </CardContent>
                 </Card>

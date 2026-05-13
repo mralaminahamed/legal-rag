@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -48,6 +49,9 @@ export function EditView({ draftId, section, currentContent, onClose }: EditView
           <DialogTitle className="text-sm font-semibold">
             Edit — {SECTION_LABELS[section]}
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            Edit the {SECTION_LABELS[section]} section. Citation markers are preserved as plain text and will be diffed on submit.
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-2">
           <p className="text-xs text-slate-500">
@@ -55,6 +59,7 @@ export function EditView({ draftId, section, currentContent, onClose }: EditView
             The system will diff your edit, classify it, and store the signal for future drafts.
           </p>
           <Textarea
+            id="edit-section-content"
             value={editedText}
             onChange={(e) => setEditedText(e.target.value)}
             className="min-h-48 text-sm font-mono resize-y"

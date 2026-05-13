@@ -26,7 +26,7 @@ export default function App() {
     refetchInterval: view === "upload" ? 5000 : false,
   });
 
-  const { data: document } = useQuery({
+  const { data: docDetail } = useQuery({
     queryKey: ["document", selectedDocId],
     queryFn: () => api.getDocument(selectedDocId!),
     enabled: !!selectedDocId,
@@ -73,7 +73,7 @@ export default function App() {
             variant="outline"
             size="sm"
             className="w-full gap-2 text-xs justify-start"
-            onClick={() => { setSelectedDocId(null); setDraft1(null); setView("upload"); }}
+            onClick={() => { setSelectedDocId(null); setDraft1(null); setDraft2(null); setView("upload"); }}
           >
             <Upload className="h-3.5 w-3.5" />
             Upload new document
@@ -124,10 +124,10 @@ export default function App() {
           </div>
         ) : view === "comparison" && draft1 && draft2 ? (
           <ComparisonView draft1={draft1} draft2={draft2} onBack={() => setView("draft")} />
-        ) : draft1 && document ? (
+        ) : draft1 && docDetail ? (
           <DraftView
-            documentId={document.id}
-            document={document}
+            documentId={docDetail.id}
+            document={docDetail}
             draft={draft1}
             onRedraft={handleRedraft}
           />
