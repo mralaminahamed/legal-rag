@@ -147,6 +147,30 @@ npm run demo
 CONFIRM_RESET=1 npm run eval:full   # writes eval/results/run-NNN.md
 ```
 
+### Testing
+
+**Unit tests** (no external services required — runs in < 1s):
+
+```bash
+npm run test:unit
+```
+
+**Full test suite** (unit + OCR Python tests via Docker):
+
+```bash
+npm test
+```
+
+**Integration tests** (requires a throwaway Postgres database):
+
+```bash
+# Start a test DB (or use the dev DB — integration tests truncate tables):
+export TEST_DATABASE_URL="postgres://legal:secret@localhost:5432/legalrag"
+npm run test:integration
+```
+
+The integration test exercises the full ingest → draft → edit → re-draft flow against a real database with a mock LLM provider, verifying SQL correctness and route response shapes without API calls.
+
 ---
 
 ## API Reference

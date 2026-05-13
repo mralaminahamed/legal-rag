@@ -14,6 +14,8 @@
     "test:api": "npm --workspace apps/api run test",
     "test:ocr": "docker compose run --rm ocr pytest tests/ -v",
     "test": "npm run test:api && npm run test:ocr",
+    "test:unit": "npm --workspace apps/api run test:unit",
+    "test:integration": "npm --workspace apps/api run test:integration",
     "eval:grounding": "tsx eval/grounding-precision.ts",
     "eval:convergence": "CONFIRM_RESET=1 tsx eval/edit-convergence.ts",
     "eval:full": "CONFIRM_RESET=1 tsx eval/run-full.ts",

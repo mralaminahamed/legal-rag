@@ -165,6 +165,41 @@ For each of the five sections:
 
 ---
 
+## Testing Strategy
+
+Tests target the modules where engineering judgment is visible — not thin pass-throughs.
+
+### What is tested
+
+| Module | Type | What it verifies |
+|--------|------|-----------------|
+| `pipeline/chunk.ts` | Unit | Breakpoint logic, short-chunk merging, abbreviation preservation, empty input |
+| `edit-loop/diff.ts` | Unit | Op types (equal/insert/delete/replace), range correctness, stats computation |
+| `edit-loop/classify.ts` | Unit | Classification per edit type, LLM prompt structure, fallback on provider failure |
+| `llm/router.ts` | Unit | Provider selection by env, fallback chain, explicit override |
+| `__integration__/e2e.test.ts` | Integration | Full DB flow: ingest → draft → edit → citations endpoint |
+| `apps/ocr/tests/` | Integration (Python) | OCR strategy cascade: pdfplumber, tesseract, image-only PDF synthesis |
+
+### What is not tested and why
+
+- **Route handlers** (`routes/*.ts`): thin wrappers around pipeline functions. Testing them would duplicate unit-test coverage without adding signal.
+- **LLM provider classes** (`llm/anthropic.ts`, `openai.ts`, `ollama.ts`): thin SDK wrappers. Their correctness is guaranteed by the SDK type system; real API calls are not deterministic.
+- **Exhaustive path coverage**: the goal is confidence in logic-heavy modules, not a coverage number. Three similar lines are tested once, not three times.
+
+### Mock LLM Provider pattern
+
+`src/__test-helpers__/mock-llm-provider.ts` implements `LLMProvider` with a response map keyed by user-message substrings. Any module under test that calls `getLLMProvider()` can be redirected to this mock via `vi.mock('../llm/router.js')`. The `calls` array records every invocation for prompt-structure assertions. This is the most reusable artifact in the test suite — extend it when adding tests for new LLM-dependent modules.
+
+### Running tests
+
+```bash
+npm run test:unit          # vitest unit tests, ~300ms, no services needed
+npm test                   # unit + OCR pytest (requires Docker)
+npm run test:integration   # requires TEST_DATABASE_URL
+```
+
+---
+
 ## References
 
 - Greg Kamradt, "5 Levels of Text Splitting" — original semantic chunking breakpoint algorithm that `pipeline/chunk.ts` implements.
