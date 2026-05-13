@@ -1,11 +1,13 @@
 import { Hono } from "hono";
 import { logger } from "./lib/logger.js";
+import { ingestRouter } from "./routes/ingest.js";
+import { retrieveRouter } from "./routes/retrieve.js";
+import { draftCitationsRouter } from "./routes/draft-citations.js";
 
 const VERSION = "0.1.0";
 
 /**
  * Builds and returns the Hono application instance with all routes registered.
- * Routes for ingest, draft, edit, and retrieve are added in later phases.
  *
  * @returns Configured Hono application
  * @author Al Amin Ahamed
@@ -17,6 +19,10 @@ export function buildApp(): Hono {
     logger.debug("health check");
     return c.json({ status: "ok", service: "api", version: VERSION });
   });
+
+  app.route("/ingest", ingestRouter);
+  app.route("/retrieve", retrieveRouter);
+  app.route("/draft", draftCitationsRouter);
 
   return app;
 }
