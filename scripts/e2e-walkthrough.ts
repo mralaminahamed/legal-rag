@@ -3,7 +3,7 @@
  *
  * Usage:
  *   npm run demo                        → default: 01-clean-complaint.pdf
- *   npm run demo -- --all               → all three samples sequentially
+ *   npm run demo -- --all               → all five samples sequentially
  *   npm run demo -- --file <path>       → specific file
  *
  * @author Al Amin Ahamed
@@ -25,17 +25,24 @@ const FILE_IDX = ARGV.indexOf("--file");
 const CUSTOM_FILE = FILE_IDX >= 0 ? ARGV[FILE_IDX + 1] : undefined;
 
 const DEFAULT_PDF = path.join(SAMPLES_DIR, "01-clean-complaint.pdf");
+
+/** All samples including image-only variants to exercise the OCR fallback chain. */
 const ALL_SAMPLES = [
   path.join(SAMPLES_DIR, "01-clean-complaint.pdf"),
   path.join(SAMPLES_DIR, "02-scanned-notice.pdf"),
+  path.join(SAMPLES_DIR, "02-scanned-notice-IMG.pdf"),
   path.join(SAMPLES_DIR, "03-low-quality-contract.pdf"),
+  path.join(SAMPLES_DIR, "03-low-quality-contract-IMG.pdf"),
 ];
 
 const FILES_TO_RUN: string[] = RUN_ALL
-  ? ALL_SAMPLES
+  ? ALL_SAMPLES.filter(f => fs.existsSync(f))
   : [CUSTOM_FILE ?? DEFAULT_PDF];
 
 const API_URL = process.env["API_URL"] ?? "http://localhost:3000";
+
+/** Number of edit-loop iterations to run per document. Shows convergence trend. */
+const EDIT_ITERATIONS = 3;
 
 const SECTIONS = ["parties", "key_dates", "issues", "procedural_history", "relief"] as const;
 type Section = (typeof SECTIONS)[number];
@@ -73,10 +80,9 @@ interface DocSummary {
   filename: string;
   ocrStrategy: string;
   fieldsExtracted: boolean;
-  meanGrounding1: number;
-  meanGrounding2: number;
-  totalDist1: number;
-  totalDist2: number;
+  meanGrounding: number;
+  convergencePct: number;
+  distByIteration: number[];
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -100,7 +106,8 @@ async function ingestFile(filePath: string): Promise<IngestResult> {
   const bytes = fs.readFileSync(filePath);
   const filename = path.basename(filePath);
   const form = new FormData();
-  form.append("file", new Blob([bytes], { type: "application/pdf" }), filename);
+  const mime = filename.endsWith(".pdf") ? "application/pdf" : "image/png";
+  form.append("file", new Blob([bytes], { type: mime }), filename);
   const res = await fetch(`${API_URL}/ingest`, { method: "POST", body: form });
   if (!res.ok) throw new Error(`/ingest HTTP ${res.status}: ${await res.text()}`);
   return res.json() as Promise<IngestResult>;
@@ -155,102 +162,90 @@ async function runDocument(filePath: string, idx: number, total: number): Promis
   process.stdout.write(`    defendants:     ${ingest.fields.parties.defendants.join(", ") || "(none)"}\n`);
   process.stdout.write(`    key_dates:      ${ingest.fields.key_dates.length}\n`);
 
-  // ── 2. Draft 1 ────────────────────────────────────────────────────────────
-  process.stdout.write("\n[2] Generating draft 1...\n");
-  const draft1 = await generateDraft(ingest.documentId);
+  // ── 2. Initial draft ──────────────────────────────────────────────────────
+  process.stdout.write("\n[2] Generating initial draft...\n");
+  const draft0 = await generateDraft(ingest.documentId);
 
-  const meanGrounding1 =
-    SECTIONS.reduce((s, k) => s + (draft1[k]?.groundingScore ?? 0), 0) / SECTIONS.length;
-  process.stdout.write(`    Mean grounding: ${fmt(meanGrounding1)}\n`);
+  const meanGrounding =
+    SECTIONS.reduce((s, k) => s + (draft0[k]?.groundingScore ?? 0), 0) / SECTIONS.length;
+  process.stdout.write(`    Mean grounding: ${fmt(meanGrounding)}\n`);
 
-  // Print draft 1
-  process.stdout.write(`\n${hr()}\nDRAFT 1\n${hr()}`);
+  process.stdout.write(`\n${hr()}\nINITIAL DRAFT\n${hr()}`);
   for (const section of SECTIONS) {
-    const s = draft1[section];
+    const s = draft0[section];
     if (!s) continue;
     process.stdout.write(
       `\n\n§ ${SECTION_LABELS[section]}  (grounding: ${fmt(s.groundingScore)}  citations: ${s.citations.length})\n${hr("·")}\n${s.content}\n`,
     );
   }
 
-  // ── 3. Apply operator edits ───────────────────────────────────────────────
-  process.stdout.write(`\n\n[3] Applying operator edits...\n`);
-  let totalDist1 = 0;
+  // ── 3. Edit-loop: EDIT_ITERATIONS rounds ─────────────────────────────────
+  process.stdout.write(`\n\n[3] Edit-loop convergence (${EDIT_ITERATIONS} iterations)...\n`);
 
-  for (const section of SECTIONS) {
-    const s = draft1[section];
-    if (!s) continue;
-    const preferred = applyEdit(section, s.content);
-    const dist = wordDist(s.content, preferred);
-    totalDist1 += dist;
-    if (dist > 0) {
-      await submitEdit(s.draftId, section, preferred);
+  const distByIteration: number[] = [];
+  let prevDraft = draft0;
+
+  for (let iter = 1; iter <= EDIT_ITERATIONS; iter++) {
+    // Apply operator edits to previous draft and submit
+    let totalDist = 0;
+    for (const section of SECTIONS) {
+      const s = prevDraft[section];
+      if (!s) continue;
+      const preferred = applyEdit(section, s.content);
+      const dist = wordDist(s.content, preferred);
+      totalDist += dist;
+      if (dist > 0) await submitEdit(s.draftId, section, preferred);
     }
-    process.stdout.write(`    ${section.padEnd(22)}: dist=${dist}\n`);
+    distByIteration.push(totalDist);
+
+    // Regenerate with learned signals
+    prevDraft = await generateDraft(ingest.documentId);
   }
 
-  // ── 4. Draft 2 ────────────────────────────────────────────────────────────
-  process.stdout.write("\n[4] Regenerating with learned signals...\n");
-  const draft2 = await generateDraft(ingest.documentId);
-
-  const meanGrounding2 =
-    SECTIONS.reduce((s, k) => s + (draft2[k]?.groundingScore ?? 0), 0) / SECTIONS.length;
-  process.stdout.write(`    Mean grounding: ${fmt(meanGrounding2)}\n`);
-
-  // Print draft 2
-  process.stdout.write(`\n${hr()}\nDRAFT 2 (after edit-loop signals)\n${hr()}`);
+  // Print latest draft
+  process.stdout.write(`\n${hr()}\nFINAL DRAFT (after ${EDIT_ITERATIONS} edit-loop iterations)\n${hr()}`);
   for (const section of SECTIONS) {
-    const s = draft2[section];
+    const s = prevDraft[section];
     if (!s) continue;
     process.stdout.write(
       `\n\n§ ${SECTION_LABELS[section]}  (grounding: ${fmt(s.groundingScore)}  citations: ${s.citations.length})\n${hr("·")}\n${s.content}\n`,
     );
   }
 
-  // ── 5. Before / after comparison ─────────────────────────────────────────
-  process.stdout.write(`\n\n[5] Comparison (distance to operator-preferred form)\n`);
-  process.stdout.write(`${"Section".padEnd(24)}  ${"Dist1".padEnd(8)}  ${"Dist2".padEnd(8)}  Direction\n`);
+  // ── 4. Convergence table ──────────────────────────────────────────────────
+  process.stdout.write(`\n\n[4] Edit-loop convergence (distance to operator-preferred form)\n`);
+  process.stdout.write(`${"Iteration".padEnd(12)}  ${"Dist to Preferred".padEnd(20)}  Δ from Previous\n`);
   process.stdout.write(hr() + "\n");
 
-  let totalDist2 = 0;
-
-  for (const section of SECTIONS) {
-    const s1 = draft1[section];
-    const s2 = draft2[section];
-    if (!s1 || !s2) continue;
-
-    const pref2 = applyEdit(section, s2.content);
-    const d1 = wordDist(s1.content, applyEdit(section, s1.content));
-    const d2 = wordDist(s2.content, pref2);
-    const delta = d2 - d1;
-    totalDist2 += d2;
-
-    const dir = d1 === 0 ? "—" : delta < 0
-      ? `↓ ${pct(-delta, d1)} reduction`
-      : delta > 0 ? `↑ ${pct(delta, d1)} increase`
+  for (const [i, dist] of distByIteration.entries()) {
+    const prev = i === 0 ? null : distByIteration[i - 1];
+    const delta = prev === null ? "—"
+      : dist < prev ? `↓ ${pct(prev - dist, prev)} reduction`
+      : dist > prev ? `↑ ${pct(dist - prev, prev)} increase`
       : "= no change";
-
-    process.stdout.write(`${section.padEnd(24)}  ${String(d1).padEnd(8)}  ${String(d2).padEnd(8)}  ${dir}\n`);
+    process.stdout.write(`${String(i + 1).padEnd(12)}  ${String(dist).padEnd(20)}  ${delta}\n`);
   }
 
   process.stdout.write(hr() + "\n");
-  const totalDelta = totalDist2 - totalDist1;
-  const totalDir = totalDist1 === 0 ? "—"
-    : totalDelta < 0 ? `↓ ${pct(-totalDelta, totalDist1)} reduction`
-    : totalDelta > 0 ? `↑ ${pct(totalDelta, totalDist1)} increase`
+
+  const startDist = distByIteration[0] ?? 0;
+  const endDist = distByIteration[distByIteration.length - 1] ?? 0;
+  const convergencePct = startDist > 0 ? ((startDist - endDist) / startDist) * 100 : 0;
+  const convergenceDir = startDist === 0 ? "—"
+    : convergencePct > 0 ? `↓ ${convergencePct.toFixed(0)}% reduction over ${EDIT_ITERATIONS} iterations`
+    : convergencePct < 0 ? `↑ ${(-convergencePct).toFixed(0)}% increase`
     : "= no change";
 
-  process.stdout.write(`${"TOTAL".padEnd(24)}  ${String(totalDist1).padEnd(8)}  ${String(totalDist2).padEnd(8)}  ${totalDir}\n`);
-  process.stdout.write(`Grounding: ${fmt(meanGrounding1)} → ${fmt(meanGrounding2)}\n`);
+  process.stdout.write(`TOTAL  ${startDist} → ${endDist}  ${convergenceDir}\n`);
+  process.stdout.write(`Grounding: ${fmt(meanGrounding)}\n`);
 
   return {
     filename,
     ocrStrategy: ingest.ocrStrategy,
     fieldsExtracted,
-    meanGrounding1,
-    meanGrounding2,
-    totalDist1,
-    totalDist2,
+    meanGrounding,
+    convergencePct,
+    distByIteration,
   };
 }
 
@@ -259,20 +254,18 @@ async function runDocument(filePath: string, idx: number, total: number): Promis
 function printAggregate(results: DocSummary[]): void {
   process.stdout.write(`\n\n${hr("═")}\nAGGREGATE RESULTS\n${hr("═")}\n\n`);
   process.stdout.write(
-    `${"Document".padEnd(34)}  ${"OCR Strategy".padEnd(20)}  ${"Fields".padEnd(8)}  ${"Grounding".padEnd(12)}  Edit Δ\n`,
+    `${"Document".padEnd(36)}  ${"OCR Strategy".padEnd(22)}  ${"Fields".padEnd(8)}  ${"Grounding".padEnd(10)}  Convergence\n`,
   );
-  process.stdout.write("─".repeat(100) + "\n");
+  process.stdout.write("─".repeat(105) + "\n");
 
   for (const r of results) {
-    const grounding = `${fmt(r.meanGrounding1)}→${fmt(r.meanGrounding2)}`;
-    const delta = r.totalDist2 - r.totalDist1;
-    const dir = r.totalDist1 === 0 ? "—"
-      : delta < 0 ? `↓ ${pct(-delta, r.totalDist1)}`
-      : delta > 0 ? `↑ ${pct(delta, r.totalDist1)}`
+    const convStr = r.distByIteration[0] === 0 ? "—"
+      : r.convergencePct > 0 ? `↓ ${r.convergencePct.toFixed(0)}%`
+      : r.convergencePct < 0 ? `↑ ${(-r.convergencePct).toFixed(0)}%`
       : "=";
 
     process.stdout.write(
-      `${r.filename.padEnd(34)}  ${r.ocrStrategy.padEnd(20)}  ${(r.fieldsExtracted ? "✓" : "✗").padEnd(8)}  ${grounding.padEnd(12)}  ${dir}\n`,
+      `${r.filename.padEnd(36)}  ${r.ocrStrategy.padEnd(22)}  ${(r.fieldsExtracted ? "✓" : "✗").padEnd(8)}  ${fmt(r.meanGrounding).padEnd(10)}  ${convStr}\n`,
     );
   }
 
@@ -284,6 +277,7 @@ function printAggregate(results: DocSummary[]): void {
 async function main(): Promise<void> {
   process.stdout.write(`\n${hr("═")}\nLegal RAG — E2E Walkthrough\n${hr("═")}\n`);
   process.stdout.write(`API: ${API_URL}   Files: ${FILES_TO_RUN.map(f => path.basename(f)).join(", ")}\n`);
+  process.stdout.write(`Edit-loop iterations per document: ${EDIT_ITERATIONS}\n`);
 
   const results: DocSummary[] = [];
 

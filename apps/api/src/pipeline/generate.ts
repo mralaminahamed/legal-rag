@@ -226,7 +226,7 @@ export async function generateDraft(documentId: string): Promise<DraftResult> {
         ${documentId},
         ${section},
         ${cleanText},
-        ${JSON.stringify(citations)}::jsonb,
+        ${sql.json(citations as unknown as Parameters<typeof sql.json>[0])},
         1
       )
       RETURNING id

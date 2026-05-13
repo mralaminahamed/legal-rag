@@ -5,8 +5,7 @@
   "author": "Al Amin Ahamed <mrabir.ahamed@gmail.com>",
   "description": "RAG system for legal document understanding — Case Fact Summary generation with edit-loop improvement",
   "workspaces": [
-    "apps/*",
-    "packages/*"
+    "apps/*"
   ],
   "scripts": {
     "dev:api": "npm --workspace apps/api run dev",

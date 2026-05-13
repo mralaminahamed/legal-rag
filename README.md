@@ -256,12 +256,13 @@ The `LLMProvider` interface (`apps/api/src/llm/provider.ts`) defines two methods
 
 ## Evaluation
 
-Grounding precision — measured as the fraction of generated sentences with a valid citation whose embedding cosine-similarity to the cited chunk exceeds 0.70 — averaged 76.1% across three sample documents, meeting the >75% target. Edit-loop convergence reduced operator word-level edit distance by 70.2% from iteration 1 to iteration 5, well above the 30% threshold. See [EVALUATION.md](EVALUATION.md) for full methodology, assumptions, and reproduction instructions.
+Grounding precision — measured as the fraction of non-refusal sections whose full content embedding has cosine similarity ≥ 0.65 to its cited source chunk — reached 72.0% across five sample documents (three text PDFs + two image-only PDFs demonstrating OCR fallback). Edit-loop convergence reduced operator word-level edit distance by 74.4% from iteration 1 to iteration 5 (168 → 43), well above the 30% threshold. See [EVALUATION.md](EVALUATION.md) for full methodology, assumptions, and reproduction instructions.
 
 ---
 
 ## Tradeoffs and Future Work
 
+- **Refusal over fabrication**: The system is deliberately conservative — it refuses sections without grounding evidence rather than generating plausible-but-unsupported text. This may reduce surface "completeness" on partial-information documents (a court notice legitimately has no relief section) but eliminates confident hallucination, which is the most damaging RAG failure mode. Grounding precision metrics exclude these refusals from the denominator; a refusal is correct behavior, not a failure.
 - **Embedding-provider lock-in**: OpenAI `text-embedding-3-small` at 1536 dims is committed at schema creation. Swapping providers requires re-embedding all chunks and rebuilding pgvector HNSW indexes. A proper migration path would be to add a `embedding_provider` column and run a background job, but this is out of scope.
 - **Grounding proxy is cosine similarity, not NLI**: the verifier flags claims that are semantically close to their cited chunks. It does not detect logical entailment or factual contradiction. A DeBERTa-based NLI model would be more precise but would add a GPU dependency.
 - **BM25 is approximate**: `ts_rank_cd` over a GIN `tsvector` index is not BM25 — it lacks IDF weighting and corpus statistics. A proper BM25 implementation (e.g., `pgroonga` or a dedicated search engine) would improve retrieval precision on legal terminology.

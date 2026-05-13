@@ -4,7 +4,7 @@ import { getLLMProvider } from "../llm/router.js";
 import { logger } from "../lib/logger.js";
 
 /** Minimum new edits since last update before running another summarisation. */
-const DEBOUNCE_COUNT = 3;
+const DEBOUNCE_COUNT = 2;
 
 const PreferencesSchema = z.object({
   tone: z.enum(["formal", "neutral", "informal"]).optional(),

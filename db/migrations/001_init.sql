@@ -1,6 +1,5 @@
 -- 001_init.sql
--- Initial schema for legal-rag: documents, chunks, drafts, edits, exemplars, style preferences.
--- Verbatim from IMPLEMENTATION_PLAN.md § 6. All statements idempotent (IF NOT EXISTS).
+-- Initial schema for legal-rag: documents, chunks, drafts, edits, exemplars, style preferences. All statements idempotent (IF NOT EXISTS).
 
 CREATE EXTENSION IF NOT EXISTS vector;
 CREATE EXTENSION IF NOT EXISTS pg_trgm;

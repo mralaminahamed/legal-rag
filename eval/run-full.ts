@@ -58,15 +58,15 @@ function buildReport(
 
   for (const gr of groundingResults) {
     lines.push(`### ${gr.filename}`, "");
-    lines.push(`| Section | Coverage | Validity | Grounding |`);
-    lines.push(`|---------|----------|----------|-----------|`);
+    lines.push(`| Section | Lines | Refusals | Coverage | Validity | Grounding | Mean Sim |`);
+    lines.push(`|---------|-------|----------|----------|----------|-----------|----------|`);
     for (const s of gr.sections) {
       lines.push(
-        `| ${s.section} | ${fmt(s.citationCoverage)} | ${fmt(s.citationValidity)} | ${fmt(s.groundingPrecision)} |`,
+        `| ${s.section} | ${s.totalLines} | ${s.refusalsCount} | ${fmt(s.citationCoverage)} | ${fmt(s.citationValidity)} | ${fmt(s.groundingPrecision)} | ${fmt(s.meanSimilarity)} |`,
       );
     }
     lines.push(
-      `| **OVERALL** | **${fmt(gr.overall.citationCoverage)}** | **${fmt(gr.overall.citationValidity)}** | **${fmt(gr.overall.groundingPrecision)}** |`,
+      `| **OVERALL** | — | ${fmt(gr.overall.refusalRate)} | **${fmt(gr.overall.citationCoverage)}** | **${fmt(gr.overall.citationValidity)}** | **${fmt(gr.overall.groundingPrecision)}** | ${fmt(gr.overall.meanSimilarity)} |`,
     );
     lines.push("");
   }
