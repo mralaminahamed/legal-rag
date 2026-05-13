@@ -55,15 +55,21 @@ cp .env.example .env
 
 ---
 
-### Option A — Cloud (recommended for first run, ~2 minutes)
+### Option A — Cloud (recommended for first run, ~5 min first build)
 
 Requires an Anthropic **or** OpenAI key for chat, plus an OpenAI key for embeddings.
 
 ```bash
-# In .env — set these three lines:
-LLM_PROVIDER=anthropic        # or: openai
-ANTHROPIC_API_KEY=sk-ant-...  # required when LLM_PROVIDER=anthropic
-OPENAI_API_KEY=sk-...         # always required — embeddings are pinned to OpenAI
+# In .env — pick one provider for chat, OpenAI is always needed for embeddings:
+
+# If you have an OpenAI key only:
+LLM_PROVIDER=openai
+OPENAI_API_KEY=sk-...
+
+# If you have an Anthropic key (+ OpenAI for embeddings):
+LLM_PROVIDER=anthropic
+ANTHROPIC_API_KEY=sk-ant-...
+OPENAI_API_KEY=sk-...
 ```
 
 **Why is `OPENAI_API_KEY` always required?** The `chunks` table stores vectors at 1536 dimensions (`vector(1536)`), matching OpenAI's `text-embedding-3-small` output. Every HNSW index on the table was built at this dimension. Switching embedding providers would require a full schema migration, re-embedding every chunk, and rebuilding all indexes — a non-trivial operation that would break existing data. This is a deliberate lock-in trade-off for operational stability.
@@ -110,6 +116,7 @@ docker compose restart api
 ```bash
 curl http://localhost:3000/health   # {"status":"ok","service":"api","version":"0.1.0"}
 curl http://localhost:8000/health   # {"status":"ok","service":"ocr","version":"0.1.0"}
+curl -I http://localhost:5173       # HTTP/1.1 200 OK  (nginx web UI)
 ```
 
 **Open the web UI:**

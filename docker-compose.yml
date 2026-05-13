@@ -1,6 +1,6 @@
 # Legal RAG — docker-compose stack
 #
-# Three services: db (pgvector), ocr (Python sidecar), api (Node.js).
+# Four services: db (pgvector), ocr (Python sidecar), api (Node.js), web (React SPA / nginx).
 #
 # Ollama (optional, for LLM_PROVIDER=ollama):
 #   Ollama runs on the HOST machine, not inside Docker.
