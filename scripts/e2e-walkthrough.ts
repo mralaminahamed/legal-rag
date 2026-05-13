@@ -26,13 +26,21 @@ const CUSTOM_FILE = FILE_IDX >= 0 ? ARGV[FILE_IDX + 1] : undefined;
 
 const DEFAULT_PDF = path.join(SAMPLES_DIR, "01-clean-complaint.pdf");
 
-/** All samples including image-only variants to exercise the OCR fallback chain. */
+/**
+ * All samples including image-only and degraded variants.
+ * Demonstrates three OCR paths:
+ *   - pdfplumber_text: clean text PDFs (100% confidence)
+ *   - tesseract_image (IMG): image-only PDFs rasterised from clean text (~95% confidence)
+ *   - tesseract_image (DEGRADED): noise + blur + rotation + JPEG artifacts (~50–58% confidence)
+ */
 const ALL_SAMPLES = [
   path.join(SAMPLES_DIR, "01-clean-complaint.pdf"),
   path.join(SAMPLES_DIR, "02-scanned-notice.pdf"),
   path.join(SAMPLES_DIR, "02-scanned-notice-IMG.pdf"),
+  path.join(SAMPLES_DIR, "02-scanned-notice-DEGRADED.pdf"),
   path.join(SAMPLES_DIR, "03-low-quality-contract.pdf"),
   path.join(SAMPLES_DIR, "03-low-quality-contract-IMG.pdf"),
+  path.join(SAMPLES_DIR, "03-low-quality-contract-DEGRADED.pdf"),
 ];
 
 const FILES_TO_RUN: string[] = RUN_ALL

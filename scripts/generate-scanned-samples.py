@@ -1,22 +1,29 @@
 """
-Generate image-only PDF variants of scanned samples.
+Generate image-only and degraded PDF variants of scanned samples.
 
-Rasterizes each page to 200 DPI PNG images (removing the text layer), then
-reassembles the images into a new PDF. pdfplumber returns < 50 chars/page on
-these files, triggering the unstructured_hi_res → tesseract_image fallback.
+Produces two sets of test files:
 
-This demonstrates the OCR strategy cascade with real scanned-input behaviour.
+1. *-IMG.pdf  — image-only PDFs (no text layer) rasterised at 200 DPI.
+   pdfplumber returns < 50 chars/page, triggering the OCR fallback chain.
+   Tesseract confidence: ~95%.
+
+2. *-DEGRADED.pdf — genuinely noisy scan simulations.
+   Degradation: rotation ±1.5°, downscale/upscale cycle, Gaussian blur,
+   salt-and-pepper noise, JPEG compression artifacts.
+   Tesseract confidence: ~50–58%, demonstrating system robustness on messy input.
 
 Usage (from repo root):
   docker compose run --rm -v $(pwd)/samples:/app/samples ocr \
       python /app/scripts/generate-scanned-samples.py
 
-Or locally if poppler-utils and Pillow are installed:
-  python scripts/generate-scanned-samples.py
+Or locally with numpy + pdf2image + Pillow installed:
+  pip install numpy && python scripts/generate-scanned-samples.py
 
 Outputs:
   samples/inputs/02-scanned-notice-IMG.pdf
+  samples/inputs/02-scanned-notice-DEGRADED.pdf
   samples/inputs/03-low-quality-contract-IMG.pdf
+  samples/inputs/03-low-quality-contract-DEGRADED.pdf
 
 Author: Al Amin Ahamed <mrabir.ahamed@gmail.com>
 """
