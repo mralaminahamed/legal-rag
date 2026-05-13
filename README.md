@@ -15,6 +15,12 @@ The system is designed to improve over time from operator corrections. When an e
 Documents move through an OCR sidecar (Python, three-strategy cascade: pdfplumber → unstructured → tesseract), semantic chunking via embedding-distance breakpoints, and hybrid vector + full-text retrieval with reciprocal-rank fusion. Five parallel retrieval passes, one per Case Fact Summary section, feed section-specific grounded prompts. Retrieved exemplars and learned preferences from prior edits are injected into each prompt. See [ARCHITECTURE.md](ARCHITECTURE.md) for the full design narrative.
 
 ```
+            ┌────────────────────────────────────────────────────┐
+            │ React SPA — http://localhost:5173                  │
+            │  Upload → Draft → Edit → Compare (word diff)       │
+            └────────────────────────┬───────────────────────────┘
+                                     │ REST (CORS)
+                                     ▼
 ┌──────────────┐    ┌─────────────────┐    ┌──────────────────────┐
 │ PDF / Image  │ ─► │ Python OCR      │ ─► │ Node.js Ingestion    │
 │ (any quality)│    │ Sidecar         │    │ Pipeline             │
@@ -152,6 +158,15 @@ curl -X POST http://localhost:3000/edit \
 # Returns: {"editId":"...","classification":{...},"signalScore":0.9,"promotedToExemplar":true}
 ```
 
+**Sample inputs and outputs** (pre-built for review):
+
+```
+samples/inputs/   — 7 PDFs: clean, scanned, image-only, and degraded variants
+samples/outputs/  — walkthroughs, extracted fields, initial draft, improved draft, eval summary
+```
+
+See [`samples/outputs/README.md`](samples/outputs/README.md) for descriptions of each file.
+
 **Run the full end-to-end demo** (ingest → draft → edit → re-draft → compare):
 
 ```bash
@@ -191,6 +206,22 @@ The integration test exercises the full ingest → draft → edit → re-draft f
 ---
 
 ## API Reference
+
+### `GET /documents`
+
+Returns all ingested documents ordered by creation date (newest first). Used by the web UI sidebar.
+
+**Response:** `[{"id": "uuid", "filename": "...", "document_type": "complaint", "created_at": "..."}]`
+
+---
+
+### `GET /documents/:id`
+
+Returns full document detail including extracted structured fields.
+
+**Response:** `{"id": "uuid", "filename": "...", "document_type": "complaint", "parties": {"plaintiffs": [...], "defendants": [...], "counsel": [...]}, "key_dates": [{"label": "...", "iso_date": "..."}], "ocr_confidence": 1.0, "created_at": "..."}`
+
+---
 
 ### `POST /ingest`
 
