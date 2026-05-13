@@ -1,0 +1,59 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build output
+dist/
+build/
+*.js.map
+
+# Environment — NEVER commit real keys
+.env
+.env.local
+.env.*.local
+
+# TypeScript
+*.tsbuildinfo
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg
+*.egg-info/
+dist/
+.eggs/
+.venv/
+venv/
+ENV/
+
+# Test / coverage
+coverage/
+.nyc_output/
+.pytest_cache/
+htmlcov/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+pino-*.log
+
+# Docker
+.dockerignore
+
+# Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Evaluation outputs (generated at runtime)
+eval/results/*.json
+samples/outputs/

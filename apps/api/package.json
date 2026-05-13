@@ -1,0 +1,32 @@
+{
+  "name": "@legal-rag/api",
+  "version": "0.1.0",
+  "private": true,
+  "author": "Al Amin Ahamed <mrabir.ahamed@gmail.com>",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "latest",
+    "@hono/node-server": "latest",
+    "diff": "^7.0.0",
+    "dotenv": "^16.4.5",
+    "hono": "latest",
+    "openai": "latest",
+    "pino": "^9.2.0",
+    "pino-pretty": "^11.2.1",
+    "postgres": "^3.4.4",
+    "zod": "latest"
+  },
+  "devDependencies": {
+    "@types/diff": "^5.2.1",
+    "@types/node": "^20.14.0",
+    "tsx": "^4.15.6",
+    "typescript": "^5.4.5",
+    "vitest": "^1.6.0"
+  }
+}
