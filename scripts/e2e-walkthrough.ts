@@ -1,12 +1,10 @@
 /**
  * End-to-end demo walkthrough.
  *
- * Ingests samples/inputs/01-clean-complaint.pdf, generates a five-section
- * draft, applies one operator edit per section, re-generates, and prints
- * a before/after comparison with grounding and edit-distance metrics.
- *
- * Usage: npm run demo
- *        API_URL=http://localhost:3000 tsx scripts/e2e-walkthrough.ts
+ * Usage:
+ *   npm run demo                        → default: 01-clean-complaint.pdf
+ *   npm run demo -- --all               → all three samples sequentially
+ *   npm run demo -- --file <path>       → specific file
  *
  * @author Al Amin Ahamed
  */
@@ -16,10 +14,28 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { diffWords } from "diff";
+import { applyEdit } from "../eval/edit-patterns.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const SAMPLES_DIR = path.join(__dirname, "../samples/inputs");
+
+const ARGV = process.argv.slice(2);
+const RUN_ALL = ARGV.includes("--all");
+const FILE_IDX = ARGV.indexOf("--file");
+const CUSTOM_FILE = FILE_IDX >= 0 ? ARGV[FILE_IDX + 1] : undefined;
+
+const DEFAULT_PDF = path.join(SAMPLES_DIR, "01-clean-complaint.pdf");
+const ALL_SAMPLES = [
+  path.join(SAMPLES_DIR, "01-clean-complaint.pdf"),
+  path.join(SAMPLES_DIR, "02-scanned-notice.pdf"),
+  path.join(SAMPLES_DIR, "03-low-quality-contract.pdf"),
+];
+
+const FILES_TO_RUN: string[] = RUN_ALL
+  ? ALL_SAMPLES
+  : [CUSTOM_FILE ?? DEFAULT_PDF];
+
 const API_URL = process.env["API_URL"] ?? "http://localhost:3000";
-const PDF_PATH = path.join(__dirname, "../samples/inputs/01-clean-complaint.pdf");
 
 const SECTIONS = ["parties", "key_dates", "issues", "procedural_history", "relief"] as const;
 type Section = (typeof SECTIONS)[number];
@@ -32,197 +48,259 @@ const SECTION_LABELS: Record<Section, string> = {
   relief: "Relief Sought",
 };
 
-const MONTHS: Record<string, string> = {
-  January: "01", February: "02", March: "03", April: "04",
-  May: "05", June: "06", July: "07", August: "08",
-  September: "09", October: "10", November: "11", December: "12",
-};
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+interface IngestResult {
+  documentId: string;
+  chunkCount: number;
+  ocrConfidence: number;
+  ocrStrategy: string;
+  fields: {
+    document_type: string | null;
+    parties: { plaintiffs: string[]; defendants: string[]; counsel: string[] };
+    key_dates: Array<{ label: string; iso_date: string }>;
+  };
+}
+
+interface SectionData {
+  draftId: string;
+  content: string;
+  groundingScore: number;
+  citations: unknown[];
+}
+
+interface DocSummary {
+  filename: string;
+  ocrStrategy: string;
+  fieldsExtracted: boolean;
+  meanGrounding1: number;
+  meanGrounding2: number;
+  totalDist1: number;
+  totalDist2: number;
+}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function hr(char = "─", width = 70): string {
-  return char.repeat(width);
-}
+function hr(char = "─", width = 72): string { return char.repeat(width); }
 
-function wordEditDistance(a: string, b: string): number {
+function wordDist(a: string, b: string): number {
   return diffWords(a, b).reduce((acc, c) => acc + (c.added || c.removed ? (c.count ?? 1) : 0), 0);
 }
 
-function applyOperatorEdit(section: Section, text: string): string {
-  switch (section) {
-    case "parties":
-      return text.replace(/\bP\.\s*Specter\b/g, "Mr. P. Specter, Esq.");
-    case "key_dates":
-      return text.replace(
-        /\b(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{1,2}),?\s+(\d{4})\b/g,
-        (_m, month: string, day: string, year: string) =>
-          `${year}-${MONTHS[month] ?? "01"}-${day.padStart(2, "0")}`,
-      );
-    case "issues":
-      return text.replace(/^(\d+)\.\s+/gm, (_m, n: string) => `Count ${n}: `);
-    case "procedural_history":
-      return text
-        .replace(/\bdenies\b/g, "denied")
-        .replace(/\bfiles\b/g, "filed")
-        .replace(/\brequests\b/g, "requested")
-        .replace(/\bmoves\b/g, "moved");
-    case "relief":
-      return text.replace(/\bPlaintiff seeks\b/g, "Plaintiff respectfully requests");
-  }
+function pct(n: number, base: number): string {
+  if (base === 0) return "—";
+  return `${((n / base) * 100).toFixed(0)}%`;
 }
 
-async function apiPost<T>(path: string, body: unknown): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`${path} → HTTP ${res.status}: ${text}`);
-  }
-  return res.json() as Promise<T>;
-}
+function fmt(n: number): string { return (n * 100).toFixed(1) + "%"; }
 
-async function ingestFile(filePath: string): Promise<{ documentId: string; chunkCount: number; ocrConfidence: number; fields: unknown }> {
+// ── API helpers ───────────────────────────────────────────────────────────────
+
+async function ingestFile(filePath: string): Promise<IngestResult> {
   const bytes = fs.readFileSync(filePath);
   const filename = path.basename(filePath);
   const form = new FormData();
   form.append("file", new Blob([bytes], { type: "application/pdf" }), filename);
-
   const res = await fetch(`${API_URL}/ingest`, { method: "POST", body: form });
-  if (!res.ok) throw new Error(`/ingest → HTTP ${res.status}: ${await res.text()}`);
-  return res.json() as Promise<{ documentId: string; chunkCount: number; ocrConfidence: number; fields: unknown }>;
+  if (!res.ok) throw new Error(`/ingest HTTP ${res.status}: ${await res.text()}`);
+  return res.json() as Promise<IngestResult>;
 }
 
-function printDraft(label: string, sections: Record<string, { content: string; groundingScore: number; citations: unknown[] }>): void {
-  process.stdout.write(`\n${hr("═")}\n${label}\n${hr("═")}\n`);
-  for (const section of SECTIONS) {
-    const s = sections[section];
-    if (!s) continue;
-    const sLabel = SECTION_LABELS[section];
-    process.stdout.write(`\n${hr("─")}\n§ ${sLabel}  (grounding: ${(s.groundingScore * 100).toFixed(0)}%  citations: ${s.citations.length})\n${hr("─")}\n`);
-    process.stdout.write(s.content + "\n");
-  }
+async function generateDraft(documentId: string): Promise<Record<string, SectionData>> {
+  const res = await fetch(`${API_URL}/draft`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ document_id: documentId }),
+  });
+  if (!res.ok) throw new Error(`/draft HTTP ${res.status}: ${await res.text()}`);
+  const data = await res.json() as { sections: Record<string, SectionData>; providerUsed: string };
+  return data.sections;
 }
 
-// ── Main ──────────────────────────────────────────────────────────────────────
+async function submitEdit(draftId: string, section: string, edited: string): Promise<void> {
+  const res = await fetch(`${API_URL}/edit`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ draft_id: draftId, section, edited_text: edited }),
+  });
+  if (!res.ok) process.stderr.write(`  WARN /edit ${res.status}: ${await res.text()}\n`);
+}
 
-async function main(): Promise<void> {
-  process.stdout.write(`\n${"═".repeat(70)}\nLegal RAG — End-to-End Demo Walkthrough\n${"═".repeat(70)}\n\n`);
-  process.stdout.write(`API:  ${API_URL}\nFile: ${PDF_PATH}\n`);
+// ── Per-document run ──────────────────────────────────────────────────────────
 
-  if (!fs.existsSync(PDF_PATH)) {
-    process.stderr.write(`\nERROR: ${PDF_PATH} not found.\nRun: tsx scripts/generate-samples.ts\n`);
+async function runDocument(filePath: string, idx: number, total: number): Promise<DocSummary> {
+  const filename = path.basename(filePath);
+
+  process.stdout.write(`\n${hr("═")}\n[${idx + 1}/${total}] ${filename}\n${hr("═")}\n`);
+
+  if (!fs.existsSync(filePath)) {
+    process.stderr.write(`  ERROR: file not found: ${filePath}\n  Run: tsx scripts/generate-samples.ts\n`);
     process.exit(1);
   }
 
-  // ── Step 1: Ingest ────────────────────────────────────────────────────────
-  process.stdout.write("\n[1/6] Ingesting document...\n");
-  const ingestResult = await ingestFile(PDF_PATH);
-  process.stdout.write(`      Document ID:  ${ingestResult.documentId}\n`);
-  process.stdout.write(`      Chunks:       ${ingestResult.chunkCount}\n`);
-  process.stdout.write(`      OCR conf:     ${(ingestResult.ocrConfidence * 100).toFixed(0)}%\n`);
-  process.stdout.write(`      Fields:       ${JSON.stringify(ingestResult.fields, null, 0).slice(0, 120)}...\n`);
+  // ── 1. Ingest ─────────────────────────────────────────────────────────────
+  process.stdout.write("\n[1] Ingesting...\n");
+  const ingest = await ingestFile(filePath);
+  const fieldsExtracted =
+    (ingest.fields.parties.plaintiffs.length > 0 ||
+     ingest.fields.parties.defendants.length > 0 ||
+     ingest.fields.key_dates.length > 0);
 
-  // ── Step 2: Generate initial draft ────────────────────────────────────────
-  process.stdout.write("\n[2/6] Generating initial draft (5 sections)...\n");
-  const draftResult1 = await apiPost<{
-    documentId: string;
-    sections: Record<string, { draftId: string; content: string; groundingScore: number; citations: unknown[] }>;
-    providerUsed: string;
-  }>("/draft", { document_id: ingestResult.documentId });
+  process.stdout.write(`    document_id:    ${ingest.documentId}\n`);
+  process.stdout.write(`    chunks:         ${ingest.chunkCount}\n`);
+  process.stdout.write(`    ocr_strategy:   ${ingest.ocrStrategy}\n`);
+  process.stdout.write(`    ocr_confidence: ${fmt(ingest.ocrConfidence)}\n`);
+  process.stdout.write(`    document_type:  ${ingest.fields.document_type ?? "(null)"}\n`);
+  process.stdout.write(`    plaintiffs:     ${ingest.fields.parties.plaintiffs.join(", ") || "(none)"}\n`);
+  process.stdout.write(`    defendants:     ${ingest.fields.parties.defendants.join(", ") || "(none)"}\n`);
+  process.stdout.write(`    key_dates:      ${ingest.fields.key_dates.length}\n`);
 
-  process.stdout.write(`      Provider: ${draftResult1.providerUsed}\n`);
+  // ── 2. Draft 1 ────────────────────────────────────────────────────────────
+  process.stdout.write("\n[2] Generating draft 1...\n");
+  const draft1 = await generateDraft(ingest.documentId);
 
-  const avgGrounding1 = SECTIONS.reduce((s, k) => s + (draftResult1.sections[k]?.groundingScore ?? 0), 0) / SECTIONS.length;
-  process.stdout.write(`      Mean grounding score: ${(avgGrounding1 * 100).toFixed(1)}%\n`);
+  const meanGrounding1 =
+    SECTIONS.reduce((s, k) => s + (draft1[k]?.groundingScore ?? 0), 0) / SECTIONS.length;
+  process.stdout.write(`    Mean grounding: ${fmt(meanGrounding1)}\n`);
 
-  // ── Step 3: Print initial draft ───────────────────────────────────────────
-  process.stdout.write("\n[3/6] Initial draft:\n");
-  printDraft("DRAFT 1 — Initial Generation", draftResult1.sections);
-
-  // ── Step 4: Apply operator edits ─────────────────────────────────────────
-  process.stdout.write(`\n\n[4/6] Applying operator edits to each section...\n`);
-  const editResults: Record<string, { signalScore: number; class: string; promotedToExemplar: boolean }> = {};
-
+  // Print draft 1
+  process.stdout.write(`\n${hr()}\nDRAFT 1\n${hr()}`);
   for (const section of SECTIONS) {
-    const s = draftResult1.sections[section];
+    const s = draft1[section];
     if (!s) continue;
-    const edited = applyOperatorEdit(section, s.content);
-    const dist = wordEditDistance(s.content, edited);
-
-    if (dist === 0) {
-      process.stdout.write(`      ${section.padEnd(22)}: no change\n`);
-      continue;
-    }
-
-    const editRes = await apiPost<{
-      editId: string;
-      classification: { class: string; confidence: number };
-      signalScore: number;
-      promotedToExemplar: boolean;
-    }>("/edit", { draft_id: s.draftId, section, edited_text: edited });
-
-    editResults[section] = {
-      signalScore: editRes.signalScore,
-      class: editRes.classification.class,
-      promotedToExemplar: editRes.promotedToExemplar,
-    };
-
     process.stdout.write(
-      `      ${section.padEnd(22)}: dist=${dist}  class=${editRes.classification.class.padEnd(20)} score=${editRes.signalScore.toFixed(2)}  exemplar=${editRes.promotedToExemplar}\n`,
+      `\n\n§ ${SECTION_LABELS[section]}  (grounding: ${fmt(s.groundingScore)}  citations: ${s.citations.length})\n${hr("·")}\n${s.content}\n`,
     );
   }
 
-  // ── Step 5: Re-generate with learned signals ──────────────────────────────
-  process.stdout.write("\n[5/6] Re-generating with learned signals...\n");
-  const draftResult2 = await apiPost<{
-    documentId: string;
-    sections: Record<string, { draftId: string; content: string; groundingScore: number; citations: unknown[] }>;
-    providerUsed: string;
-  }>("/draft", { document_id: ingestResult.documentId });
+  // ── 3. Apply operator edits ───────────────────────────────────────────────
+  process.stdout.write(`\n\n[3] Applying operator edits...\n`);
+  let totalDist1 = 0;
 
-  const avgGrounding2 = SECTIONS.reduce((s, k) => s + (draftResult2.sections[k]?.groundingScore ?? 0), 0) / SECTIONS.length;
-  process.stdout.write(`      Provider: ${draftResult2.providerUsed}\n`);
-  process.stdout.write(`      Mean grounding score: ${(avgGrounding2 * 100).toFixed(1)}%\n`);
-
-  printDraft("DRAFT 2 — After Edit-Loop Signals", draftResult2.sections);
-
-  // ── Step 6: Before/after comparison ──────────────────────────────────────
-  process.stdout.write(`\n\n[6/6] Before / after comparison:\n\n`);
-  process.stdout.write(`${"Section".padEnd(24)}  ${"Dist-1".padEnd(8)}  ${"Dist-2".padEnd(8)}  ${"Delta".padEnd(8)}  Grounding-1  Grounding-2\n`);
-  process.stdout.write(`${hr()}\n`);
-
-  let totalDist1 = 0, totalDist2 = 0;
   for (const section of SECTIONS) {
-    const s1 = draftResult1.sections[section];
-    const s2 = draftResult2.sections[section];
+    const s = draft1[section];
+    if (!s) continue;
+    const preferred = applyEdit(section, s.content);
+    const dist = wordDist(s.content, preferred);
+    totalDist1 += dist;
+    if (dist > 0) {
+      await submitEdit(s.draftId, section, preferred);
+    }
+    process.stdout.write(`    ${section.padEnd(22)}: dist=${dist}\n`);
+  }
+
+  // ── 4. Draft 2 ────────────────────────────────────────────────────────────
+  process.stdout.write("\n[4] Regenerating with learned signals...\n");
+  const draft2 = await generateDraft(ingest.documentId);
+
+  const meanGrounding2 =
+    SECTIONS.reduce((s, k) => s + (draft2[k]?.groundingScore ?? 0), 0) / SECTIONS.length;
+  process.stdout.write(`    Mean grounding: ${fmt(meanGrounding2)}\n`);
+
+  // Print draft 2
+  process.stdout.write(`\n${hr()}\nDRAFT 2 (after edit-loop signals)\n${hr()}`);
+  for (const section of SECTIONS) {
+    const s = draft2[section];
+    if (!s) continue;
+    process.stdout.write(
+      `\n\n§ ${SECTION_LABELS[section]}  (grounding: ${fmt(s.groundingScore)}  citations: ${s.citations.length})\n${hr("·")}\n${s.content}\n`,
+    );
+  }
+
+  // ── 5. Before / after comparison ─────────────────────────────────────────
+  process.stdout.write(`\n\n[5] Comparison (distance to operator-preferred form)\n`);
+  process.stdout.write(`${"Section".padEnd(24)}  ${"Dist1".padEnd(8)}  ${"Dist2".padEnd(8)}  Direction\n`);
+  process.stdout.write(hr() + "\n");
+
+  let totalDist2 = 0;
+
+  for (const section of SECTIONS) {
+    const s1 = draft1[section];
+    const s2 = draft2[section];
     if (!s1 || !s2) continue;
-    const edited1 = applyOperatorEdit(section, s1.content);
-    const edited2 = applyOperatorEdit(section, s2.content);
-    const d1 = wordEditDistance(s1.content, edited1);
-    const d2 = wordEditDistance(s2.content, edited2);
+
+    const pref2 = applyEdit(section, s2.content);
+    const d1 = wordDist(s1.content, applyEdit(section, s1.content));
+    const d2 = wordDist(s2.content, pref2);
     const delta = d2 - d1;
-    totalDist1 += d1;
     totalDist2 += d2;
 
+    const dir = d1 === 0 ? "—" : delta < 0
+      ? `↓ ${pct(-delta, d1)} reduction`
+      : delta > 0 ? `↑ ${pct(delta, d1)} increase`
+      : "= no change";
+
+    process.stdout.write(`${section.padEnd(24)}  ${String(d1).padEnd(8)}  ${String(d2).padEnd(8)}  ${dir}\n`);
+  }
+
+  process.stdout.write(hr() + "\n");
+  const totalDelta = totalDist2 - totalDist1;
+  const totalDir = totalDist1 === 0 ? "—"
+    : totalDelta < 0 ? `↓ ${pct(-totalDelta, totalDist1)} reduction`
+    : totalDelta > 0 ? `↑ ${pct(totalDelta, totalDist1)} increase`
+    : "= no change";
+
+  process.stdout.write(`${"TOTAL".padEnd(24)}  ${String(totalDist1).padEnd(8)}  ${String(totalDist2).padEnd(8)}  ${totalDir}\n`);
+  process.stdout.write(`Grounding: ${fmt(meanGrounding1)} → ${fmt(meanGrounding2)}\n`);
+
+  return {
+    filename,
+    ocrStrategy: ingest.ocrStrategy,
+    fieldsExtracted,
+    meanGrounding1,
+    meanGrounding2,
+    totalDist1,
+    totalDist2,
+  };
+}
+
+// ── Aggregate table ───────────────────────────────────────────────────────────
+
+function printAggregate(results: DocSummary[]): void {
+  process.stdout.write(`\n\n${hr("═")}\nAGGREGATE RESULTS\n${hr("═")}\n\n`);
+  process.stdout.write(
+    `${"Document".padEnd(34)}  ${"OCR Strategy".padEnd(20)}  ${"Fields".padEnd(8)}  ${"Grounding".padEnd(12)}  Edit Δ\n`,
+  );
+  process.stdout.write("─".repeat(100) + "\n");
+
+  for (const r of results) {
+    const grounding = `${fmt(r.meanGrounding1)}→${fmt(r.meanGrounding2)}`;
+    const delta = r.totalDist2 - r.totalDist1;
+    const dir = r.totalDist1 === 0 ? "—"
+      : delta < 0 ? `↓ ${pct(-delta, r.totalDist1)}`
+      : delta > 0 ? `↑ ${pct(delta, r.totalDist1)}`
+      : "=";
+
     process.stdout.write(
-      `${section.padEnd(24)}  ${String(d1).padEnd(8)}  ${String(d2).padEnd(8)}  ${(delta <= 0 ? "" : "+") + delta}${" ".repeat(Math.max(0, 8 - String(delta).length))}  ` +
-      `${(s1.groundingScore * 100).toFixed(0) + "%"}         ${(s2.groundingScore * 100).toFixed(0) + "%"}\n`,
+      `${r.filename.padEnd(34)}  ${r.ocrStrategy.padEnd(20)}  ${(r.fieldsExtracted ? "✓" : "✗").padEnd(8)}  ${grounding.padEnd(12)}  ${dir}\n`,
     );
   }
 
-  process.stdout.write(`${hr()}\n`);
-  const reduction = totalDist1 > 0 ? ((totalDist1 - totalDist2) / totalDist1) * 100 : 0;
-  process.stdout.write(`${"TOTAL".padEnd(24)}  ${String(totalDist1).padEnd(8)}  ${String(totalDist2).padEnd(8)}  ${reduction.toFixed(0)}% reduction\n`);
-  process.stdout.write(`\nGrounding: ${(avgGrounding1 * 100).toFixed(1)}% → ${(avgGrounding2 * 100).toFixed(1)}%\n`);
+  process.stdout.write("\n");
+}
 
-  process.stdout.write(`\n${"═".repeat(70)}\nDemo complete.\n${"═".repeat(70)}\n\n`);
+// ── Entry point ───────────────────────────────────────────────────────────────
+
+async function main(): Promise<void> {
+  process.stdout.write(`\n${hr("═")}\nLegal RAG — E2E Walkthrough\n${hr("═")}\n`);
+  process.stdout.write(`API: ${API_URL}   Files: ${FILES_TO_RUN.map(f => path.basename(f)).join(", ")}\n`);
+
+  const results: DocSummary[] = [];
+
+  for (const [i, filePath] of FILES_TO_RUN.entries()) {
+    const summary = await runDocument(filePath, i, FILES_TO_RUN.length);
+    results.push(summary);
+  }
+
+  if (results.length > 1) {
+    printAggregate(results);
+  }
+
+  process.stdout.write(`${hr("═")}\nDemo complete.\n${hr("═")}\n\n`);
 }
 
 main().catch(err => {
-  process.stderr.write(`\nFatal: ${String(err)}\n\n`);
-  process.stderr.write("Check that docker compose is running: docker compose up -d\n");
+  process.stderr.write(`\nFatal: ${String(err)}\n`);
+  process.stderr.write("Check: docker compose up -d\n\n");
   process.exit(1);
 });

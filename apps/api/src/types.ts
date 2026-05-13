@@ -25,6 +25,7 @@ export interface IngestResult {
   chunkCount: number;
   fields: DocumentFields;
   ocrConfidence: number;
+  ocrStrategy: string;
 }
 
 export type CaseSummarySection =

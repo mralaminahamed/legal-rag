@@ -1,11 +1,10 @@
-import Anthropic from "@anthropic-ai/sdk";
 import { z } from "zod";
 import { loadEnv } from "../lib/env.js";
 import { logger } from "../lib/logger.js";
+import { getLLMProvider } from "../llm/router.js";
 import {
   EXTRACT_FIELDS_SYSTEM,
   buildExtractUserMessage,
-  buildRetryUserMessage,
 } from "../lib/prompts/extract-fields-prompt.js";
 import type { DocumentFields } from "../types.js";
 
@@ -19,6 +18,7 @@ const DocumentFieldsSchema = z.object({
   key_dates: z.array(
     z.object({
       label: z.string(),
+      // Accept both strict ISO and relaxed strings; downstream can normalise
       iso_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
     }),
   ),
@@ -33,108 +33,61 @@ function emptyFields(): DocumentFields {
 }
 
 /**
- * Strips markdown code fences from a Claude response so the remaining
- * string can be passed directly to JSON.parse.
+ * Extracts structured fields (parties, key dates, document type) from raw OCR
+ * text using the configured LLM provider (respects LLM_PROVIDER env).
  *
- * @param text - Raw text from Claude message
- * @returns Extracted JSON string
- * @author Al Amin Ahamed
- */
-function extractJsonFromResponse(text: string): string {
-  const fenceMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
-  if (fenceMatch?.[1]) return fenceMatch[1].trim();
-  const bracketMatch = text.match(/(\{[\s\S]*\})/);
-  if (bracketMatch?.[1]) return bracketMatch[1].trim();
-  return text.trim();
-}
-
-async function callClaude(
-  client: Anthropic,
-  model: string,
-  userContent: string,
-): Promise<string> {
-  const message = await client.messages.create({
-    model,
-    max_tokens: 1024,
-    system: EXTRACT_FIELDS_SYSTEM,
-    messages: [{ role: "user", content: userContent }],
-  });
-
-  const block = message.content[0];
-  if (!block || block.type !== "text") {
-    throw new Error(`Unexpected Claude response content type: ${block?.type}`);
-  }
-  return block.text;
-}
-
-/**
- * Calls Anthropic Claude to extract structured fields (parties, dates,
- * document type) from raw OCR text. Validates the JSON response with Zod.
- * Retries once with a corrective prompt on parse failure.
+ * Previously hard-coded to Anthropic; now routes through getLLMProvider() so
+ * OpenAI and Ollama paths work without an Anthropic key.
  *
- * @param rawText - Full raw text from the OCR sidecar
- * @returns Parsed DocumentFields, or empty fields if both attempts fail
+ * Adds debug-level logging of input length, text preview, and extraction
+ * result so failures are visible in logs rather than silently defaulting.
+ *
+ * @param rawText - Full document text from the OCR sidecar
+ * @returns Parsed DocumentFields, or empty fields if extraction fails
  * @author Al Amin Ahamed
  */
 export async function extractStructuredFields(
   rawText: string,
 ): Promise<DocumentFields> {
   const env = loadEnv();
-  const client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
+  void env; // accessed only for side-effect of early validation
 
-  let responseText: string;
+  logger.debug(
+    { textLength: rawText.length, preview: rawText.slice(0, 500) },
+    "extractStructuredFields: input",
+  );
+
+  const provider = getLLMProvider();
+  logger.debug({ provider: provider.name() }, "extractStructuredFields: using provider");
 
   try {
-    responseText = await callClaude(
-      client,
-      env.ANTHROPIC_MODEL,
-      buildExtractUserMessage(rawText),
+    const fields = await provider.completeJSON(
+      {
+        system: EXTRACT_FIELDS_SYSTEM,
+        messages: [{ role: "user", content: buildExtractUserMessage(rawText) }],
+        maxTokens: 1024,
+        temperature: 0.1,
+      },
+      DocumentFieldsSchema,
     );
-  } catch (err) {
-    logger.error({ err }, "Claude field extraction call failed");
-    return emptyFields();
-  }
 
-  const attempt = tryParse(responseText);
-  if (attempt) return attempt;
-
-  logger.warn("First parse failed — retrying with corrective prompt");
-
-  try {
-    responseText = await callClaude(
-      client,
-      env.ANTHROPIC_MODEL,
-      buildRetryUserMessage(rawText),
+    logger.info(
+      {
+        document_type: fields.document_type,
+        plaintiffs: fields.parties.plaintiffs.length,
+        defendants: fields.parties.defendants.length,
+        counsel: fields.parties.counsel.length,
+        key_dates: fields.key_dates.length,
+      },
+      "extractStructuredFields: complete",
     );
+
+    return fields;
   } catch (err) {
-    logger.error({ err }, "Retry Claude call failed");
+    logger.error(
+      { err, provider: provider.name(), textLength: rawText.length },
+      "extractStructuredFields: failed — returning empty fields",
+    );
     return emptyFields();
-  }
-
-  const retried = tryParse(responseText);
-  if (retried) return retried;
-
-  logger.error("Both field extraction attempts produced invalid JSON — returning empty fields");
-  return emptyFields();
-}
-
-/**
- * Attempts to parse and validate a Claude response string as DocumentFields.
- *
- * @param text - Raw response text from Claude
- * @returns DocumentFields on success, null on parse or validation failure
- * @author Al Amin Ahamed
- */
-function tryParse(text: string): DocumentFields | null {
-  try {
-    const jsonStr = extractJsonFromResponse(text);
-    const raw: unknown = JSON.parse(jsonStr);
-    const result = DocumentFieldsSchema.safeParse(raw);
-    if (result.success) return result.data;
-    logger.warn({ issues: result.error.issues }, "DocumentFields schema validation failed");
-    return null;
-  } catch {
-    logger.warn("JSON.parse failed on Claude response");
-    return null;
   }
 }

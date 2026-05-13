@@ -64,7 +64,7 @@ export async function ingestDocument(
 
   if (chunks.length === 0) {
     logger.warn({ documentId }, "no chunks produced — document may be empty");
-    return { documentId, chunkCount: 0, fields, ocrConfidence: ocr.overall_confidence };
+    return { documentId, chunkCount: 0, fields, ocrConfidence: ocr.overall_confidence, ocrStrategy: ocr.strategy_used };
   }
 
   // ── 5. Embed all chunks ──────────────────────────────────────────────────
@@ -103,5 +103,6 @@ export async function ingestDocument(
     chunkCount: chunks.length,
     fields,
     ocrConfidence: ocr.overall_confidence,
+    ocrStrategy: ocr.strategy_used,
   };
 }
