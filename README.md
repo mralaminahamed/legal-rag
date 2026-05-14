@@ -81,7 +81,7 @@ OPENAI_API_KEY=sk-...
 **Why is `OPENAI_API_KEY` always required?** The `chunks` table stores vectors at 1536 dimensions (`vector(1536)`), matching OpenAI's `text-embedding-3-small` output. Every HNSW index on the table was built at this dimension. Switching embedding providers would require a full schema migration, re-embedding every chunk, and rebuilding all indexes — a non-trivial operation that would break existing data. This is a deliberate lock-in trade-off for operational stability.
 
 ```bash
-docker compose up --build
+docker compose up -d --build
 ```
 
 ---
@@ -104,7 +104,7 @@ OPENAI_API_KEY=sk-...   # still required for embeddings
 # Linux: use http://172.17.0.1:11434/v1 or add --network host to the api service
 
 # 3. Start the stack
-docker compose up --build
+docker compose up -d --build
 ```
 
 **Switching providers** is a single env var change plus a service restart:
