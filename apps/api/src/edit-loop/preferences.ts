@@ -62,11 +62,14 @@ export async function updateStylePreferences(section: string): Promise<void> {
     return;
   }
 
-  // Fetch last 10 edits for this section
+  // Fetch last 10 style-generalizable edits for this section.
+  // factual_correction edits encode document-specific facts, not style patterns,
+  // and must not be summarised into cross-document preferences.
   const edits = await sql<Array<{ original_text: string; edited_text: string; edit_class: string }>>`
     SELECT original_text, edited_text, edit_class
     FROM edits
     WHERE section = ${section}
+      AND edit_class != 'factual_correction'
     ORDER BY created_at DESC
     LIMIT 10
   `;

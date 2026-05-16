@@ -63,9 +63,13 @@ function parseCitations(
 
 /**
  * Fetches top-K exemplars for a section, ranked by cosine similarity to
- * a query embedding (typically the section query text embedding).
+ * a query embedding. Retrieves generalizable exemplars (rephrase, formatting,
+ * omission, addition) from all documents plus factual_correction exemplars
+ * scoped to the current document only — preventing document-specific fact
+ * corrections from contaminating unrelated document drafts.
  *
  * @param section - Section name
+ * @param documentId - UUID of the document being drafted
  * @param queryEmbedding - 1536-dim float array used for similarity ranking
  * @param limit - Maximum exemplars to return
  * @returns Exemplar rows or empty array when none exist
@@ -73,6 +77,7 @@ function parseCitations(
  */
 async function fetchExemplars(
   section: string,
+  documentId: string,
   queryEmbedding: number[],
   limit = 3,
 ): Promise<Array<{ before_text: string; after_text: string; edit_class: string }>> {
@@ -81,6 +86,7 @@ async function fetchExemplars(
     SELECT before_text, after_text, edit_class
     FROM edit_exemplars
     WHERE section = ${section}
+      AND (is_generalizable = true OR document_id = ${documentId})
     ORDER BY embedding <=> ${embStr}::vector
     LIMIT ${limit}
   `;
@@ -181,7 +187,7 @@ export async function generateDraft(documentId: string): Promise<DraftResult> {
     const queryEmb = queryEmbeddings[sectionIdx] ?? [];
     const [rawExemplars, preferencesBlock] = await Promise.all([
       queryEmb.length > 0
-        ? fetchExemplars(section, queryEmb)
+        ? fetchExemplars(section, documentId, queryEmb)
         : Promise.resolve([] as Array<{ before_text: string; after_text: string; edit_class: string }>),
       buildPreferencesBlock(section),
     ]);

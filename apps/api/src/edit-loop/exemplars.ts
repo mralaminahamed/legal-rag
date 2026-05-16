@@ -38,8 +38,19 @@ export function computeSignalScore(
   }
 }
 
+// Edits in these classes encode generalizable style patterns — safe to inject
+// into any document's prompt. factual_correction encodes document-specific
+// facts and must never cross document boundaries.
+const GENERALIZABLE_CLASSES: EditClass[] = [
+  "rephrase",
+  "formatting",
+  "omission",
+  "addition",
+];
+
 interface ExemplarRow {
   editId: string;
+  documentId: string;
   section: string;
   originalText: string;
   editedText: string;
@@ -52,6 +63,9 @@ interface ExemplarRow {
  * edit_exemplars so future drafts can retrieve it as a few-shot example.
  * Called only when signalScore >= 0.5.
  *
+ * Sets is_generalizable = false for factual_correction edits — they are stored
+ * for audit and same-document retrieval but never injected into other documents.
+ *
  * @param row - Edit metadata needed for the exemplar record
  * @throws {Error} On embedding or database failure (caller handles gracefully)
  * @author Al Amin Ahamed
@@ -61,22 +75,26 @@ export async function promoteToExemplar(row: ExemplarRow): Promise<void> {
   if (!embedding) throw new Error("Embedding returned no result for exemplar");
 
   const embStr = `[${embedding.join(",")}]`;
+  const isGeneralizable = GENERALIZABLE_CLASSES.includes(row.editClass as EditClass);
 
   await sql`
     INSERT INTO edit_exemplars
-      (section, before_text, after_text, edit_class, embedding, signal_score)
+      (document_id, section, before_text, after_text, edit_class,
+       embedding, signal_score, is_generalizable)
     VALUES (
+      ${row.documentId},
       ${row.section},
       ${row.originalText},
       ${row.editedText},
       ${row.editClass},
       ${embStr}::vector,
-      ${row.signalScore}
+      ${row.signalScore},
+      ${isGeneralizable}
     )
   `;
 
   logger.info(
-    { section: row.section, editId: row.editId, signalScore: row.signalScore },
+    { section: row.section, editId: row.editId, signalScore: row.signalScore, isGeneralizable },
     "edit promoted to exemplar",
   );
 }

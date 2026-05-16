@@ -49,13 +49,14 @@ editRouter.post("/", async (c) => {
   const { draft_id, section, edited_text } = parsed.data;
 
   // Fetch original draft content
-  const draftRows = await sql<Array<{ content: string; citations: DraftCitation[] }>>`
-    SELECT content, citations FROM drafts WHERE id = ${draft_id} AND section = ${section} LIMIT 1
+  const draftRows = await sql<Array<{ content: string; citations: DraftCitation[]; document_id: string }>>`
+    SELECT content, citations, document_id FROM drafts WHERE id = ${draft_id} AND section = ${section} LIMIT 1
   `;
   const draft = draftRows[0];
   if (!draft) {
     return c.json({ error: `Draft ${draft_id} section ${section} not found` }, 404);
   }
+  const documentId = draft.document_id;
 
   const original = draft.content;
 
@@ -98,6 +99,7 @@ editRouter.post("/", async (c) => {
     try {
       await promoteToExemplar({
         editId,
+        documentId,
         section,
         originalText: original,
         editedText: edited_text,
