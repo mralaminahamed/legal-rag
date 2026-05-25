@@ -14,16 +14,15 @@ import "dotenv/config";
 import postgres from "postgres";
 import { diffWords } from "diff";
 import { applyEdit } from "./edit-patterns.js";
+import { loadEvalEnv } from "./lib/env.js";
 
-const DATABASE_URL = process.env["DATABASE_URL"] ?? "postgres://legal:secret@localhost:5432/legalrag";
-const API_URL = process.env["API_URL"] ?? "http://localhost:3000";
-const CONFIRM_RESET = process.env["CONFIRM_RESET"] === "1";
+const evalEnv = loadEvalEnv();
 const N_ITERATIONS = (() => {
   const idx = process.argv.indexOf("--iterations");
   return idx >= 0 ? parseInt(process.argv[idx + 1] ?? "5", 10) : 5;
 })();
 
-const db = postgres(DATABASE_URL, { max: 3 });
+const db = postgres(evalEnv.DATABASE_URL, { max: 3 });
 
 const SECTIONS = ["parties", "key_dates", "issues", "procedural_history", "relief"] as const;
 
@@ -49,7 +48,7 @@ function wordEditDistance(a: string, b: string): number {
 }
 
 async function generateDraft(documentId: string): Promise<Record<string, { draftId: string; content: string }>> {
-  const res = await fetch(`${API_URL}/draft`, {
+  const res = await fetch(`${evalEnv.API_URL}/draft`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ document_id: documentId }),
@@ -60,7 +59,7 @@ async function generateDraft(documentId: string): Promise<Record<string, { draft
 }
 
 async function submitEdit(draftId: string, section: string, editedText: string): Promise<void> {
-  const res = await fetch(`${API_URL}/edit`, {
+  const res = await fetch(`${evalEnv.API_URL}/edit`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ draft_id: draftId, section, edited_text: editedText }),
@@ -78,7 +77,7 @@ async function submitEdit(draftId: string, section: string, editedText: string):
  * @author Al Amin Ahamed
  */
 export async function resetEditState(): Promise<void> {
-  if (!CONFIRM_RESET) {
+  if (!evalEnv.CONFIRM_RESET) {
     throw new Error("Set CONFIRM_RESET=1 to allow resetting edit_exemplars and style_preferences");
   }
   await db`TRUNCATE edit_exemplars`;
@@ -152,7 +151,7 @@ export async function runConvergence(documentIds?: string[]): Promise<Convergenc
 async function main(): Promise<void> {
   process.stdout.write(`\n=== Edit Convergence Evaluation (N=${N_ITERATIONS}) ===\n`);
 
-  if (!CONFIRM_RESET) {
+  if (!evalEnv.CONFIRM_RESET) {
     process.stderr.write("Set CONFIRM_RESET=1 to allow resetting state for a clean evaluation.\n");
     process.exit(1);
   }

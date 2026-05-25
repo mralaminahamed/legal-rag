@@ -95,11 +95,20 @@ export function validateProviderConfig(env: Env): void {
     );
   }
 
-  // Embeddings always go to OpenAI regardless of LLM_PROVIDER
+  // Embeddings always go to OpenAI regardless of LLM_PROVIDER.
+  // When using Ollama, warn but allow startup — embedding calls will fail at
+  // runtime with clear errors rather than crashing the process on boot.
   if (!env.OPENAI_API_KEY) {
-    throw new Error(
-      "OPENAI_API_KEY is required for embeddings regardless of LLM_PROVIDER. " +
-        "Set the key or the ingestion pipeline will fail at the embedding step.",
-    );
+    if (env.LLM_PROVIDER === "ollama") {
+      process.stderr.write(
+        "[warn] OPENAI_API_KEY not set. Ingest and draft generation will fail at the " +
+          "embedding step. Set OPENAI_API_KEY to enable full pipeline.\n",
+      );
+    } else {
+      throw new Error(
+        "OPENAI_API_KEY is required for embeddings regardless of LLM_PROVIDER. " +
+          "Set the key or switch to LLM_PROVIDER=ollama for keyless chat (embeddings still need it).",
+      );
+    }
   }
 }

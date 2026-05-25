@@ -6,6 +6,16 @@ const BATCH_SIZE = 100;
 const MAX_RETRIES = 3;
 const BASE_DELAY_MS = 1_000;
 
+let _embedClient: OpenAI | null = null;
+
+function getEmbedClient(): OpenAI {
+  if (!_embedClient) {
+    const env = loadEnv();
+    _embedClient = new OpenAI({ apiKey: env.OPENAI_API_KEY });
+  }
+  return _embedClient;
+}
+
 /**
  * Generates embeddings for a list of text strings using OpenAI
  * text-embedding-3-small, batched in groups of 100. Applies exponential
@@ -20,7 +30,7 @@ export async function embedTexts(texts: string[]): Promise<number[][]> {
   if (texts.length === 0) return [];
 
   const env = loadEnv();
-  const client = new OpenAI({ apiKey: env.OPENAI_API_KEY });
+  const client = getEmbedClient();
   const allEmbeddings: number[][] = [];
 
   for (let start = 0; start < texts.length; start += BATCH_SIZE) {

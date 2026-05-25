@@ -13,12 +13,12 @@ import path from "path";
 import postgres from "postgres";
 import { evaluateGrounding, type GroundingResult } from "./grounding-precision.js";
 import { runConvergence, resetEditState, type ConvergenceResult } from "./edit-convergence.js";
+import { loadEvalEnv } from "./lib/env.js";
 
+const evalEnv = loadEvalEnv();
 const EVAL_DIR = path.join(process.cwd(), "eval");
-const DATABASE_URL = process.env["DATABASE_URL"] ?? "postgres://legal:secret@localhost:5432/legalrag";
-const CONFIRM_RESET = process.env["CONFIRM_RESET"] === "1";
 
-const db = postgres(DATABASE_URL, { max: 3 });
+const db = postgres(evalEnv.DATABASE_URL, { max: 3 });
 
 function fmt(n: number): string {
   return (n * 100).toFixed(1) + "%";
@@ -132,8 +132,8 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  const llmProvider = process.env["LLM_PROVIDER"] ?? "ollama";
-  const embeddingModel = process.env["OPENAI_EMBEDDING_MODEL"] ?? "text-embedding-3-small";
+  const llmProvider = evalEnv.LLM_PROVIDER;
+  const embeddingModel = evalEnv.OPENAI_EMBEDDING_MODEL;
 
   // ── 1. Grounding precision ─────────────────────────────────────────────────
   process.stdout.write("Step 1/2: Grounding precision...\n");
@@ -146,7 +146,7 @@ async function main(): Promise<void> {
 
   // ── 2. Edit convergence ────────────────────────────────────────────────────
   process.stdout.write("\nStep 2/2: Edit convergence...\n");
-  if (CONFIRM_RESET) {
+  if (evalEnv.CONFIRM_RESET) {
     await resetEditState();
   } else {
     process.stdout.write("  CONFIRM_RESET not set — skipping reset, using existing state.\n");

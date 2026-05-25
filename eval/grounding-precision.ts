@@ -21,10 +21,12 @@
 import "dotenv/config";
 import postgres from "postgres";
 import OpenAI from "openai";
+import { loadEvalEnv } from "./lib/env.js";
 
-const DATABASE_URL = process.env["DATABASE_URL"] ?? "postgres://legal:secret@localhost:5432/legalrag";
-const OPENAI_API_KEY = process.env["OPENAI_API_KEY"] ?? "";
-const OPENAI_EMBEDDING_MODEL = process.env["OPENAI_EMBEDDING_MODEL"] ?? "text-embedding-3-small";
+const evalEnv = loadEvalEnv();
+
+const db = postgres(evalEnv.DATABASE_URL, { max: 3 });
+const openai = new OpenAI({ apiKey: evalEnv.OPENAI_API_KEY ?? "" });
 
 /**
  * Cosine similarity threshold for a section to be considered "grounded".
@@ -40,9 +42,6 @@ const DOC_ID_ARG = (() => {
   const idx = process.argv.indexOf("--document-id");
   return idx >= 0 ? process.argv[idx + 1] : undefined;
 })();
-
-const db = postgres(DATABASE_URL, { max: 3 });
-const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -108,7 +107,7 @@ function cosineSim(a: number[], b: number[]): number {
 async function embedBatch(texts: string[]): Promise<number[][]> {
   if (texts.length === 0) return [];
   const res = await openai.embeddings.create({
-    model: OPENAI_EMBEDDING_MODEL,
+    model: evalEnv.OPENAI_EMBEDDING_MODEL,
     input: texts,
     encoding_format: "float",
   });
@@ -165,7 +164,7 @@ export async function evaluateGrounding(documentId: string): Promise<GroundingRe
   // Batch embed all non-refusal section texts
   const toEmbed = sectionData.filter(s => !s.isRefusal && s.cleanedText.length > 0);
   let embeddings: number[][] = [];
-  if (toEmbed.length > 0 && OPENAI_API_KEY) {
+  if (toEmbed.length > 0 && evalEnv.OPENAI_API_KEY) {
     try {
       embeddings = await embedBatch(toEmbed.map(s => s.cleanedText));
     } catch (err) {
