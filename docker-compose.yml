@@ -61,6 +61,8 @@ services:
       OPENAI_EMBEDDING_MODEL: ${OPENAI_EMBEDDING_MODEL:-text-embedding-3-small}
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434/v1}
       OLLAMA_CHAT_MODEL: ${OLLAMA_CHAT_MODEL:-qwen2.5:14b-instruct-q5_K_M}
+      OLLAMA_EMBEDDING_MODEL: ${OLLAMA_EMBEDDING_MODEL:-nomic-embed-text}
+      EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER:-openai}
       PORT_API: ${PORT_API:-3000}
       LOG_LEVEL: ${LOG_LEVEL:-info}
       NODE_ENV: production

@@ -6,14 +6,29 @@ const BATCH_SIZE = 100;
 const MAX_RETRIES = 3;
 const BASE_DELAY_MS = 1_000;
 
-let _embedClient: OpenAI | null = null;
+interface EmbedConfig {
+  client: OpenAI;
+  model: string;
+}
 
-function getEmbedClient(): OpenAI {
-  if (!_embedClient) {
+let _embedConfig: EmbedConfig | null = null;
+
+function getEmbedConfig(): EmbedConfig {
+  if (!_embedConfig) {
     const env = loadEnv();
-    _embedClient = new OpenAI({ apiKey: env.OPENAI_API_KEY });
+    if (env.EMBEDDING_PROVIDER === "ollama") {
+      _embedConfig = {
+        client: new OpenAI({ baseURL: env.OLLAMA_BASE_URL, apiKey: "ollama" }),
+        model: env.OLLAMA_EMBEDDING_MODEL,
+      };
+    } else {
+      _embedConfig = {
+        client: new OpenAI({ apiKey: env.OPENAI_API_KEY }),
+        model: env.OPENAI_EMBEDDING_MODEL,
+      };
+    }
   }
-  return _embedClient;
+  return _embedConfig;
 }
 
 /**
@@ -29,17 +44,12 @@ function getEmbedClient(): OpenAI {
 export async function embedTexts(texts: string[]): Promise<number[][]> {
   if (texts.length === 0) return [];
 
-  const env = loadEnv();
-  const client = getEmbedClient();
+  const { client, model } = getEmbedConfig();
   const allEmbeddings: number[][] = [];
 
   for (let start = 0; start < texts.length; start += BATCH_SIZE) {
     const batch = texts.slice(start, start + BATCH_SIZE);
-    const batchEmbeddings = await embedBatchWithRetry(
-      client,
-      batch,
-      env.OPENAI_EMBEDDING_MODEL,
-    );
+    const batchEmbeddings = await embedBatchWithRetry(client, batch, model);
     allEmbeddings.push(...batchEmbeddings);
   }
 

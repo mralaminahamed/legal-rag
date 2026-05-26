@@ -23,8 +23,11 @@ const envSchema = z.object({
     .string()
     .default("qwen2.5:14b-instruct-q5_K_M"),
 
-  // ── Embeddings (always OpenAI, locked at 1536 dims) ─────────────────────
+  // ── Embedding provider (openai | ollama) ───────────────────────────────
+  // Changing this requires a DB reset — vector dims must match the schema.
+  EMBEDDING_PROVIDER: z.enum(["openai", "ollama"]).default("openai"),
   OPENAI_EMBEDDING_MODEL: z.string().default("text-embedding-3-small"),
+  OLLAMA_EMBEDDING_MODEL: z.string().default("nomic-embed-text"),
 
   // ── Infrastructure ──────────────────────────────────────────────────────
   DATABASE_URL: z.string().url(),
@@ -95,20 +98,13 @@ export function validateProviderConfig(env: Env): void {
     );
   }
 
-  // Embeddings always go to OpenAI regardless of LLM_PROVIDER.
-  // When using Ollama, warn but allow startup — embedding calls will fail at
-  // runtime with clear errors rather than crashing the process on boot.
-  if (!env.OPENAI_API_KEY) {
-    if (env.LLM_PROVIDER === "ollama") {
-      process.stderr.write(
-        "[warn] OPENAI_API_KEY not set. Ingest and draft generation will fail at the " +
-          "embedding step. Set OPENAI_API_KEY to enable full pipeline.\n",
-      );
-    } else {
-      throw new Error(
-        "OPENAI_API_KEY is required for embeddings regardless of LLM_PROVIDER. " +
-          "Set the key or switch to LLM_PROVIDER=ollama for keyless chat (embeddings still need it).",
-      );
-    }
+  // OPENAI_API_KEY required only when OpenAI is used for chat or embeddings.
+  const needsOpenAiKey =
+    env.LLM_PROVIDER === "openai" || env.EMBEDDING_PROVIDER === "openai";
+  if (needsOpenAiKey && !env.OPENAI_API_KEY) {
+    throw new Error(
+      "OPENAI_API_KEY is required when LLM_PROVIDER=openai or EMBEDDING_PROVIDER=openai. " +
+        "Set the key or use LLM_PROVIDER=ollama and EMBEDDING_PROVIDER=ollama for keyless operation.",
+    );
   }
 }

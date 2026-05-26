@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS chunks (
     chunk_index     INT  NOT NULL,
     text            TEXT NOT NULL,
     page_number     INT,
-    embedding       vector(1536) NOT NULL,
+    embedding       vector(768) NOT NULL,
     created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -56,7 +56,7 @@ CREATE TABLE IF NOT EXISTS edit_exemplars (
     before_text     TEXT NOT NULL,
     after_text      TEXT NOT NULL,
     edit_class      TEXT NOT NULL,
-    embedding       vector(1536) NOT NULL,   -- embedded on `before_text`
+    embedding       vector(768) NOT NULL,   -- embedded on `before_text`
     signal_score    NUMERIC(5,3) NOT NULL,
     created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
