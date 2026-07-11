@@ -397,5 +397,5 @@ curl http://localhost:3000/health
 ## Author
 
 **Al Amin Ahamed**  
-[alaminahamed.com](https://alaminahamed.com) · mrabir.ahamed@gmail.com
+[alaminahamed.com](https://alaminahamed.com) · alamin.ahamed.dev@gmail.com
 [linkedin.com/in/mralaminahamed](https://linkedin.com/in/mralaminahamed) · [github.com/mralaminahamed](https://github.com/mralaminahamed)
